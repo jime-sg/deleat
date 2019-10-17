@@ -7,15 +7,8 @@
 import primer3
 from Bio import SeqIO
 from Bio.Restriction import BamHI
+from regions import Region
 
-
-
-def set_subsequence(genome, coords):
-    s = coords[0]
-    e = coords[1]
-    subseq = genome[s:e]
-
-    return s, e, subseq
 
 
 def BamHI_cuts(seq):
@@ -32,19 +25,19 @@ DEL_COORDS = (1307339, 1327913 + 1)
 genome = SeqIO.read(GENOME, "fasta")
 
 # desired deletion
-del_start, del_end, del_seq = set_subsequence(genome, DEL_COORDS)
+del_region = Region(genome, DEL_COORDS)
 
 # deletion + margins (PCR1/2)
-total_coords = (del_start - 850, del_end + 850)
-total_start, total_end, total_seq = set_subsequence(genome, total_coords)
+del_plusmargins_coords = (del_region.s() - 850, del_region.e() + 850)
+del_plusmargins = Region(genome, del_plusmargins_coords)
 
 # PCR1
-margin1_coords = (total_start, del_start)
-margin1_start, margin1_end, margin1_seq = set_subsequence(genome, margin1_coords)
+margin1_coords = (del_plusmargins.s(), del_region.s())
+margin1 = Region(genome, margin1_coords)
 
 # PCR2
-margin2_coords = (del_end, total_end)
-margin2_start, margin2_end, margin2_seq = set_subsequence(genome, margin2_coords)
+margin2_coords = (del_region.e(), del_plusmargins.e())
+margin2 = Region(genome, margin2_coords)
 
 
 margins_ok = False
@@ -54,18 +47,18 @@ while not margins_ok:
     while not Bam_ok
         margin1_Bam_ok = False
         margin2_Bam_ok = False
-        if BamHI_cuts(margin1_seq):
-            displ1 = BamHI.search(margin1_seq)
-            s1 = margin1_start + displ1
-            e1 = margin1_end + displ1
-            margin1_start, margin1_end, margin1_seq = set_subsequence(genome, (s1, e1))
+        if BamHI_cuts(margin1.subseq()):
+            displ1 = BamHI.search(margin1.subseq())
+            s1 = margin1.s() + displ1
+            e1 = margin1.e() + displ1
+            margin1 = Region(genome, (s1, e1))
         else:
             margin1_Bam_ok = True
-        if BamHI_cuts(margin2_seq):
-            displ2 = len(margin2_seq) - BamHI.search(margin2_seq)
-            s2 = margin1_start - displ2
-            e2 = margin1_end - displ2
-            margin2_start, margin2_end, margin2_seq = set_subsequence(genome, (s2, e2))
+        if BamHI_cuts(margin2.subseq()):
+            displ2 = len(margin2.subseq()) - BamHI.search(margin2.subseq())
+            s2 = margin1.s() - displ2
+            e2 = margin1.e() - displ2
+            margin2 = Region(genome, (s2, e2))
         else:
             margin2_Bam_ok = True
 
