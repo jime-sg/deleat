@@ -1,1 +1,2 @@
 - Poner argparser a primer_design_standalone.py
+- Afinar posiciones de regions.Region.displace_past()
