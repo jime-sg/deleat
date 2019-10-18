@@ -9,7 +9,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 class Region:
     """
-    Manage subsequences basic properties.
+    Manage subsequence basic properties.
     """
     def __init__(self, seq, coords):
         """
@@ -17,22 +17,23 @@ class Region:
         :rtype: Bio.SeqRecord
         """
         self.origseq = seq
-        self.seqfeature = SeqFeature(FeatureLocation(start, end))
-        self.subseq = self.seqfeature.extract(seq)
-        self.s = coords[0]
-        self.e = coords[1]
+        self.start = coords[0]
+        self.end = coords[1]
+        self.seqfeature = SeqFeature(FeatureLocation(self.start, self.end))
+        self.subsequence = self.seqfeature.extract(seq).seq
 
     def subseq(self):
-        return self.subseq
+        return self.subsequence
     def s(self):
-        return self.s
+        return self.start
     def e(self):
-        return self.e
+        return self.end
 
     def displace_past(self, pos, dir):
         if dir == "right":
             displ = pos
-        if dir == "left":
-            displ = -(len(self.subseq) - pos)
+        elif dir == "left":
+            displ = -(len(self.subsequence) - pos)
 
-        self.__init__(self.origseq, (self.s + displ, self.e + displ))
+        self.__init__(self.origseq,
+                      (self.start + displ, self.end + displ))
