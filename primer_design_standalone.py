@@ -7,6 +7,7 @@
 import primer3
 from Bio import SeqIO
 from Bio.Restriction import BamHI
+from Bio.Seq import Seq
 from regions import Region
 
 
@@ -42,14 +43,54 @@ def check_BamHItargets_and_repeats(seq, seq_name, dir):
             seq_ok = True
 
 
+def design_primers(start, end):
+    p3_seqargs = {
+        "SEQUENCE_TEMPLATE": str(genome.seq),
+        "SEQUENCE_INCLUDED_REGION": [start, end - start]
+    }
+
+    p3_globalargs = {
+        "PRIMER_TASK": "generic",
+        "PRIMER_PRODUCT_SIZE_RANGE": [750, 850],
+        "PRIMER_PRODUCT_OPT_SIZE": 800,
+        "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
+        "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
+        "PRIMER_NUM_RETURN": 10
+    }
+
+    results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
+
+    return results
+
+
+def parse_p3results(results_dict):
+    results_str = "N\tsize\tF_start-F_end..R_start-R_end\tseq_F\tseq_R\tTM_F (ºC)\tTM_R (ºC)\n"
+    for n in range(0, results_dict["PRIMER_PAIR_NUM_RETURNED"]):
+        prod_size = results_dict["PRIMER_PAIR_%d_PRODUCT_SIZE" % n]
+        lp_start = results_dict["PRIMER_LEFT_%d" % n][0]
+        lp_end = results_dict["PRIMER_LEFT_%d" % n][0] + results_dict["PRIMER_LEFT_%d" % n][1] - 1
+        rp_start = results_dict["PRIMER_RIGHT_%d" % n][0]
+        rp_end = results_dict["PRIMER_RIGHT_%d" % n][0] + results_dict["PRIMER_RIGHT_%d" % n][1] - 1
+        lp_seq = results_dict["PRIMER_LEFT_%d_SEQUENCE" % n]
+        rp_seq = results_dict["PRIMER_RIGHT_%d_SEQUENCE" % n]
+        lp_tm = results_dict["PRIMER_LEFT_%d_TM" % n]
+        rp_tm = results_dict["PRIMER_RIGHT_%d_TM" % n]
+
+        results_str += "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n" \
+                       % (n + 1, prod_size, lp_start, lp_end, rp_start, rp_end, lp_seq, rp_seq, lp_tm, rp_tm)
+
+    return results_str
+
+
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
 LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2/"
-DEL_COORDS = (1459510, 1467913 + 1)
+DEL_COORDS = (1307339, 1327913)
 MARGIN_SIZE = 850
+
+sep = "-" * 80 + "\n"
 
 genome = SeqIO.read(GENOME, "fasta")
 log = open(LOG_DIR + "primer_design.txt", "w")
-
 
 # define initial regions
 ## desired deletion
@@ -71,48 +112,52 @@ margin2_coords = (del_region.e(),
 margin2 = Region(genome, margin2_coords)
 
 # check margin region quality
-log.write("-"*30 + "\nChecking margins...\n")
+log.write(sep + "Checking margins...\n")
 log.write("Initial locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-          %(margin1.s(), margin1.e(), margin2.s(), margin2.e()))
+          % (margin1.s(), margin1.e(), margin2.s(), margin2.e()))
 check_BamHItargets_and_repeats(margin1, "margin 1", dir="right")
 check_BamHItargets_and_repeats(margin2, "margin 2", dir="left")
 log.write("\nMargin quality check: done.")
 log.write("\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-      %(margin1.s(), margin1.e(), margin2.s(), margin2.e()))
-log.write("-"*30 + "\n")
+          % (margin1.s(), margin1.e(), margin2.s(), margin2.e()))
 
-#log.close()
-#exit()
+# log.close()
+# exit()
 
 
 # primer design
-p3_seqargs = {
-    "SEQUENCE_ID": "deletion_2",
-    "SEQUENCE_TEMPLATE": str(p3_seq.seq),
-    "SEQUENCE_INCLUDED_REGION": [1, 850]
+log.write(sep + "Designing primers...\n")
+results_margin1 = design_primers(margin1.s(), margin1.e())
+results_margin2 = design_primers(margin2.s(), margin2.e())
+log.write("\nBest primer pairs for margin 1 (left):\n")
+log.write(parse_p3results(results_margin1))
+log.write("\nBest primer pairs for margin 2 (right):\n")
+log.write(parse_p3results(results_margin2))
+
+primers_raw = {
+    "PCR1F": results_margin1["PRIMER_LEFT_0_SEQUENCE"].upper(),
+    "PCR1R": results_margin1["PRIMER_RIGHT_0_SEQUENCE"].upper(),
+    "PCR2F": results_margin2["PRIMER_LEFT_0_SEQUENCE"].upper(),
+    "PCR2R": results_margin2["PRIMER_RIGHT_0_SEQUENCE"].upper()
 }
 
-p3_globalargs = {
-    "PRIMER_TASK": "generic",
-    "PRIMER_PRODUCT_SIZE_RANGE": [750, 850]
+primers_tailed = {
+    "PCR1F": "gcacggatcc" + primers_raw["PCR1F"],
+    "PCR1R": primers_raw["PCR1R"],
+    "PCR2F": Seq(primers_raw["PCR1R"]).reverse_complement().lower() + primers_raw["PCR2F"],
+    "PCR2R": "gcacggatcc" + primers_raw["PCR2R"]
 }
 
-results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
+log.write("\nSelected first pairs of primers:\n")
+for a, b in primers_raw.items():
+    log.write("%s: %s\n" % (a, b))
 
-print("N\tsize\tpos_fragment\tpos_genome\tseq\tTM")
-for n in range(0, results["PRIMER_PAIR_NUM_RETURNED"]):
-    p_size = results["PRIMER_PAIR_%d_PRODUCT_SIZE" %n]
-    print("%s\t%s" %(n+1, p_size))
+log.write("\nAdded tails:\n")
+for a, b in primers_tailed.items():
+    log.write("%s: %s\n" % (a, b))
 
-    for m in ("LEFT", "RIGHT"):
-        o = m + "_" + str(n)
-        seq = results["PRIMER_%s_SEQUENCE" %o]
-        pos_f = (results["PRIMER_%s" %o][0],
-                 results["PRIMER_%s" %o][0]+results["PRIMER_%s" %o][1])
-        pos_g = (pos_f[0]+p3_start, pos_f[1]+p3_start)
-        tm = results["PRIMER_%s_TM" %o]
-        print("\t\t%10s\t%s\t%s\t%.1f ºC"
-              %(pos_f, pos_g, seq, tm))
+# PCR1/2 region design
+# check for Bam targets
 
-
+log.write(sep)
 log.close()
