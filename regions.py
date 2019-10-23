@@ -20,7 +20,7 @@ class Region:
         self.start = coords[0]
         self.end = coords[1]
         self.globalseq = global_seq
-        self.seqfeature = SeqFeature(FeatureLocation(self.start, self.end))
+        self.seqfeature = SeqFeature(FeatureLocation(self.start - 1, self.end))
         self.subsequence = self.seqfeature.extract(global_seq).seq
 
     def subseq(self):
@@ -43,11 +43,12 @@ class Region:
 class Primer:
     def __init__(self, p3results_dict, primer_n, primer_dir):
         self.id = primer_dir + "_" + str(primer_n)
-        self.start = p3results_dict["PRIMER_%s" % self.id][0]
         if primer_dir == "LEFT":
+            self.start = p3results_dict["PRIMER_%s" % self.id][0]
             self.end = self.start + p3results_dict["PRIMER_%s" % self.id][1] - 1
         elif primer_dir == "RIGHT":
-            self.end = self.start - p3results_dict["PRIMER_%s" % self.id][1] + 1
+            self.end = p3results_dict["PRIMER_%s" % self.id][0]
+            self.start = self.end - p3results_dict["PRIMER_%s" % self.id][1] + 1
         self.sequence = Seq(p3results_dict["PRIMER_%s_SEQUENCE" % self.id].upper())
         self.temp = p3results_dict["PRIMER_%s_TM" % self.id]
         self.penalty = p3results_dict["PRIMER_%s_PENALTY" % self.id]
@@ -80,7 +81,7 @@ class PrimerSet:
         self.primers_raw_dict = {
             "PCR1_F": self.PCR1F,
             "PCR1_R": self.PCR1R,
-            "PCR2_F": self.PCR2R,
+            "PCR2_F": self.PCR2F,
             "PCR2_R": self.PCR2R
         }
 
@@ -90,7 +91,7 @@ class PrimerSet:
         # PCR1_R: unchanged
         self.PCR1Rt = self.PCR1R.seq()
         # PCR2_F: add revcomp of PCR1_R at 5'
-        self.PCR2Ft = self.PCR2F.seq().reverse_complement().lower() + self.PCR2F.seq()
+        self.PCR2Ft = self.PCR1R.seq().reverse_complement().lower() + self.PCR2F.seq()
         # PCR2_Bam-R: add BamHI target site at 5'
         self.PCR2Rt = Seq("gcacggatcc") + self.PCR2R.seq()
 

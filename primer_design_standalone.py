@@ -55,7 +55,8 @@ def design_primers(start, end):
         "PRIMER_PRODUCT_OPT_SIZE": 800,
         "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
         "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
-        "PRIMER_NUM_RETURN": 10
+        "PRIMER_NUM_RETURN": 10,
+        "PRIMER_FIRST_BASE_INDEX": 1
     }
 
     results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
@@ -78,13 +79,14 @@ def write_primer_pairs(primer_dict):
 
 
 def save_pcr_regions(regions_dict, dir):
-    with open(dir + "PCR1.fna", "w") as f1, open(dir + "PCR2.fna", "w") as f2:
+    with open(dir + "PCR_regions.fna", "w") as f:
         pcr1 = regions_dict["PCR1"]
-        pcr1 = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
-        SeqIO.write(pcr1, f1, "fasta")
+        pcr1_r = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
         pcr2 = regions_dict["PCR2"]
-        pcr2 = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
-        SeqIO.write(pcr2, f2, "fasta")
+        pcr2_r = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
+        prod = pcr1.subseq() + pcr2.subseq()
+        prod_r = SeqRecord(prod, id="total_product", description="")
+        SeqIO.write((pcr1_r, pcr2_r, prod_r), f, "fasta")
 
 
 
