@@ -1,4 +1,3 @@
 - Poner argparser a primer_design_standalone.py
-- Afinar posiciones de regions.Region.displace_past()
 - Poner regiones de primers en mayúsculas en PCR1/2.fna
 - Comprobar dianas de BamHI en el producto de megapriming
