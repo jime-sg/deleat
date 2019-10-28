@@ -31,6 +31,9 @@ class Region:
     def e(self):
         return self.end
 
+    def global_seq(self):
+        return self.globalseq
+
     def displace_past(self, position, direction):
         if direction == "right":
             displ = position

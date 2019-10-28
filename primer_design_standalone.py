@@ -10,9 +10,8 @@ from regions import Region
 from primers import PrimerSet, design_primers, write_primer_pairs, save_pcr_regions
 
 
-def check_BamHItargets_and_repeats(seq, seq_name, direction):
+def check_BamHItargets_and_repeats(seq, direction):
     seq_ok = False
-    log.write("\nChecking %s...\n" % seq_name)
     while not seq_ok:
         bam_ok = False
         repeat_ok = True  # TEMP
@@ -66,20 +65,24 @@ if __name__ == "__main__":
     # check margin region quality
     log.write(sep + "Checking margins...\n")
     log.write("Initial locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-              % (margin1.s(), margin1.e(), margin2.s(), margin2.e()))
-    check_BamHItargets_and_repeats(margin1, "margin 1", direction="right")
-    check_BamHItargets_and_repeats(margin2, "margin 2", direction="left")
+              % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
+              )
+    log.write("\nChecking margin 1...\n")
+    check_BamHItargets_and_repeats(margin1, direction="right")
+    log.write("\nChecking margin 2...\n")
+    check_BamHItargets_and_repeats(margin2, direction="left")
     log.write("\nMargin quality check: done.")
     log.write("\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-              % (margin1.s(), margin1.e(), margin2.s(), margin2.e()))
+              % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
+              )
 
-    # primer design
+    # design primers
     log.write(sep + "Designing primers...\n")
     all_primers = {}
-    all_primers[1] = design_primers(margin1, genome)
+    all_primers[1] = design_primers(margin1)
     log.write("\nBest primer pairs for margin 1 (left):\n")
     log.write(write_primer_pairs(all_primers[1]))
-    all_primers[2] = design_primers(margin2, genome)
+    all_primers[2] = design_primers(margin2)
     log.write("\nBest primer pairs for margin 2 (right):\n")
     log.write(write_primer_pairs(all_primers[2]))
 
@@ -96,7 +99,6 @@ if __name__ == "__main__":
     for name, primer in megapriming.primers_raw_dict.items():
         log.write("%s: %s\n" % (name, primer.seq()))
 
-    megapriming.add_tails()
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
         log.write("%s: %s\n" % (name, primer))
@@ -105,10 +107,11 @@ if __name__ == "__main__":
     log.write("\nDetermined PCR regions for megapriming:\n")
     log.write("\tPCR1 (left):  %d - %d\n\tPCR2 (right): %d - %d\n"
               % (pcr_regions["PCR1"].s(), pcr_regions["PCR1"].e(),
-                 pcr_regions["PCR2"].s(), pcr_regions["PCR2"].e()))
+                 pcr_regions["PCR2"].s(), pcr_regions["PCR2"].e())
+              )
 
     save_pcr_regions(pcr_regions, LOG_DIR)
-    log.write("\nPCR region sequences saved at %s.\n" % LOG_DIR)
+    log.write("\nPCR region sequences saved at %sPCR_regions.fna.\n" % LOG_DIR)
 
     # check for Bam targets
 

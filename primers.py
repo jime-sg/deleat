@@ -48,7 +48,6 @@ class PrimerSet:
         self.PCR1R = primer_dict["1R"]
         self.PCR2F = primer_dict["2F"]
         self.PCR2R = primer_dict["2R"]
-
         self.primers_raw_dict = {
             "PCR1_F": self.PCR1F,
             "PCR1_R": self.PCR1R,
@@ -56,22 +55,26 @@ class PrimerSet:
             "PCR2_R": self.PCR2R
         }
 
-    def add_tails(self):
-        # PCR1_Bam-F: add BamHI target site at 5'
-        self.PCR1Ft = Seq("gcacggatcc") + self.PCR1F.seq()
-        # PCR1_R: unchanged
-        self.PCR1Rt = self.PCR1R.seq()
-        # PCR2_F: add revcomp of PCR1_R at 5'
-        self.PCR2Ft = self.PCR1R.seq().reverse_complement().lower() + self.PCR2F.seq()
-        # PCR2_Bam-R: add BamHI target site at 5'
-        self.PCR2Rt = Seq("gcacggatcc") + self.PCR2R.seq()
+        self.primers_tailed_dict = self.add_tails()
+        self.PCR1Ft = self.primers_tailed_dict["PCR1_Ft"]
+        self.PCR1Rt = self.primers_tailed_dict["PCR1_Rt"]
+        self.PCR2Ft = self.primers_tailed_dict["PCR2_Ft"]
+        self.PCR2Rt = self.primers_tailed_dict["PCR2_Rt"]
 
-        self.primers_tailed_dict = {
-            "PCR1_Ft": self.PCR1Ft,
-            "PCR1_Rt": self.PCR1Rt,
-            "PCR2_Ft": self.PCR2Ft,
-            "PCR2_Rt": self.PCR2Rt
+
+    def add_tails(self):
+        primers_tailed_dict = {
+            # PCR1_Bam-F: add BamHI target site at 5'
+            "PCR1_Ft": Seq("gcacggatcc") + self.PCR1F.seq(),
+            # PCR1_R: unchanged
+            "PCR1_Rt": self.PCR1R.seq(),
+            # PCR2_F: add revcomp of PCR1_R at 5'
+            "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower() + self.PCR2F.seq(),
+            # PCR2_Bam-R: add BamHI target site at 5'
+            "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
         }
+
+        return primers_tailed_dict
 
     def get_PCR_regions(self, global_seq):
         pcr1_start = self.PCR1F.s()
@@ -86,10 +89,9 @@ class PrimerSet:
         return pcr_dict
 
 
-def design_primers(region, global_seq):
+def design_primers(region):
     primer_dict = {}
-    p3_results = p3_design((region.s(), region.e()),
-                           global_seq)
+    p3_results = p3_design(region)
     n_pairs = p3_results["PRIMER_PAIR_NUM_RETURNED"]
     for i in range(n_pairs):
         for j in ("LEFT", "RIGHT"):
@@ -99,12 +101,12 @@ def design_primers(region, global_seq):
     return primer_dict
 
 
-def p3_design(coords, template):
-    start = coords[0]
-    end = coords[1]
+def p3_design(region):
+    start = region.s()
+    end = region.e()
     p3_seqargs = {
-        "SEQUENCE_TEMPLATE": str(template.seq),
-        "SEQUENCE_INCLUDED_REGION": [start, end - start]
+        "SEQUENCE_TEMPLATE": str(region.global_seq().seq),
+        "SEQUENCE_INCLUDED_REGION": [start, end-start]
     }
     p3_globalargs = {
         "PRIMER_TASK": "generic",
@@ -137,9 +139,9 @@ def write_primer_pairs(primer_dict):
 def save_pcr_regions(regions_dict, path):
     with open(path + "PCR_regions.fna", "w") as f:
         pcr1 = regions_dict["PCR1"]
-        pcr1_r = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
         pcr2 = regions_dict["PCR2"]
-        pcr2_r = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
         prod = pcr1.subseq() + pcr2.subseq()
+        pcr1_r = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
+        pcr2_r = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
         prod_r = SeqRecord(prod, id="total_product", description="")
         SeqIO.write((pcr1_r, pcr2_r, prod_r), f, "fasta")
