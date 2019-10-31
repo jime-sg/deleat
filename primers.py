@@ -9,6 +9,8 @@ from regions import Region
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.Restriction import BamHI
+from itertools import product
 
 
 class Primer:
@@ -43,7 +45,7 @@ class Primer:
 
 
 class PrimerSet:
-    def __init__(self, primer_dict):
+    def __init__(self, primer_dict, global_seq):
         self.PCR1F = primer_dict["1F"]
         self.PCR1R = primer_dict["1R"]
         self.PCR2F = primer_dict["2F"]
@@ -61,6 +63,9 @@ class PrimerSet:
         self.PCR2Ft = self.primers_tailed_dict["PCR2_Ft"]
         self.PCR2Rt = self.primers_tailed_dict["PCR2_Rt"]
 
+        self.PCR_dict = self.get_PCR_regions(global_seq)
+        self.PCR1_region = self.PCR_dict["PCR1"]
+        self.PCR2_region = self.PCR_dict["PCR2"]
 
     def add_tails(self):
         primers_tailed_dict = {
@@ -81,12 +86,15 @@ class PrimerSet:
         pcr1_end = self.PCR1R.e()
         pcr2_start = self.PCR2F.s()
         pcr2_end = self.PCR2R.e()
-        self.PCR1_region = Region((pcr1_start, pcr1_end), global_seq)
-        self.PCR2_region = Region((pcr2_start, pcr2_end), global_seq)
-        pcr_dict = {"PCR1": self.PCR1_region,
-                    "PCR2": self.PCR2_region}
+        pcr1_region = Region((pcr1_start, pcr1_end), global_seq)
+        pcr2_region = Region((pcr2_start, pcr2_end), global_seq)
+        pcr_dict = {"PCR1": pcr1_region,
+                    "PCR2": pcr2_region}
 
         return pcr_dict
+
+    def get_product(self):
+        return self.PCR1_region.subseq() + self.PCR2_region.subseq()
 
 
 def design_primers(region):
@@ -111,9 +119,9 @@ def p3_design(region):
     p3_globalargs = {
         "PRIMER_TASK": "generic",
         "PRIMER_PRODUCT_SIZE_RANGE": [750, 850],
-        #"PRIMER_PRODUCT_OPT_SIZE": 800,
-        #"PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
-        #"PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
+        # "PRIMER_PRODUCT_OPT_SIZE": 800,
+        # "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
+        # "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
         "PRIMER_NUM_RETURN": 20,
         "PRIMER_FIRST_BASE_INDEX": 1
     }
@@ -136,11 +144,35 @@ def write_primer_pairs(primer_dict):
     return results_str
 
 
-def save_pcr_regions(regions_dict, path):
+def choose_primers(primer_dict, global_seq):
+    n_pairs = len(primer_dict[1]) // 2
+    combinations = list(product(range(n_pairs), repeat=2))
+    # prioritize primer pair quality = minimize sum of primer pair indexes
+    combinations.sort(key=lambda x: x[0]+x[1])
+    i = 0
+    bam_ok = False
+    while not bam_ok:
+        chosen_primers = {
+            "1F": primer_dict[1]["LEFT_%d" % combinations[i][0]],
+            "1R": primer_dict[1]["RIGHT_%d" % combinations[i][0]],
+            "2F": primer_dict[2]["LEFT_%d" % combinations[i][1]],
+            "2R": primer_dict[2]["RIGHT_%d" % combinations[i][1]]
+        }
+        primer_set = PrimerSet(chosen_primers, global_seq)
+        mp_product = primer_set.get_product()
+        if BamHI.search(mp_product):
+            i += 1
+        else:
+            bam_ok = True
+
+    return primer_set
+
+
+def save_pcr_regions(primer_set, path):
     with open(path + "PCR_regions.fna", "w") as f:
-        pcr1 = regions_dict["PCR1"]
-        pcr2 = regions_dict["PCR2"]
-        prod = pcr1.subseq() + pcr2.subseq()
+        pcr1 = primer_set.PCR1_region
+        pcr2 = primer_set.PCR2_region
+        prod = primer_set.get_product()
         pcr1_r = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
         pcr2_r = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
         prod_r = SeqRecord(prod, id="total_product", description="")

@@ -7,7 +7,7 @@
 from Bio import SeqIO
 from Bio.Restriction import BamHI
 from regions import Region
-from primers import PrimerSet, design_primers, write_primer_pairs, save_pcr_regions
+from primers import design_primers, write_primer_pairs, choose_primers, save_pcr_regions
 
 
 def check_BamHItargets_and_repeats(seq, direction):
@@ -78,42 +78,34 @@ if __name__ == "__main__":
 
     # design primers
     log.write(sep + "Designing primers...\n")
-    all_primers = {}
-    all_primers[1] = design_primers(margin1)
+    all_primers = {
+        1: design_primers(margin1),
+        2: design_primers(margin2)
+    }
     log.write("\nBest primer pairs for margin 1 (left):\n")
     log.write(write_primer_pairs(all_primers[1]))
-    all_primers[2] = design_primers(margin2)
     log.write("\nBest primer pairs for margin 2 (right):\n")
     log.write(write_primer_pairs(all_primers[2]))
 
-    chosen_ids = ["LEFT_0", "RIGHT_0", "LEFT_0", "RIGHT_0"]
-    chosen_primers = {
-        "1F": all_primers[1][chosen_ids[0]],
-        "1R": all_primers[1][chosen_ids[1]],
-        "2F": all_primers[2][chosen_ids[2]],
-        "2R": all_primers[2][chosen_ids[3]]
-    }
-
-    megapriming = PrimerSet(chosen_primers)
-    log.write("\nSelected pairs of primers:\n")
+    # choose primer pairs
+    log.write("\nChecking for BamHI targets in the megapriming product...\n")
+    megapriming = choose_primers(all_primers, genome)
+    log.write(sep)
+    log.write("Selected pairs of primers:\n")
     for name, primer in megapriming.primers_raw_dict.items():
         log.write("%s: %s\n" % (name, primer.seq()))
-
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
         log.write("%s: %s\n" % (name, primer))
 
-    pcr_regions = megapriming.get_PCR_regions(genome)
+    # define PCR regions
+    pcr1 = megapriming.PCR_dict["PCR1"]
+    pcr2 = megapriming.PCR_dict["PCR2"]
     log.write("\nDetermined PCR regions for megapriming:\n")
     log.write("\tPCR1 (left):  %d - %d\n\tPCR2 (right): %d - %d\n"
-              % (pcr_regions["PCR1"].s(), pcr_regions["PCR1"].e(),
-                 pcr_regions["PCR2"].s(), pcr_regions["PCR2"].e())
-              )
-
-    save_pcr_regions(pcr_regions, LOG_DIR)
+              % (pcr1.s(), pcr2.e(), pcr2.s(), pcr2.e()))
+    save_pcr_regions(megapriming, LOG_DIR)
     log.write("\nPCR region sequences saved at %sPCR_regions.fna.\n" % LOG_DIR)
-
-    # check for Bam targets
 
     log.write(sep)
     log.close()
