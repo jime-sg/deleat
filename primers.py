@@ -56,13 +56,11 @@ class PrimerSet:
             "PCR2_F": self.PCR2F,
             "PCR2_R": self.PCR2R
         }
-
         self.primers_tailed_dict = self.add_tails()
         self.PCR1Ft = self.primers_tailed_dict["PCR1_Ft"]
         self.PCR1Rt = self.primers_tailed_dict["PCR1_Rt"]
         self.PCR2Ft = self.primers_tailed_dict["PCR2_Ft"]
         self.PCR2Rt = self.primers_tailed_dict["PCR2_Rt"]
-
         self.PCR_dict = self.get_PCR_regions(global_seq)
         self.PCR1_region = self.PCR_dict["PCR1"]
         self.PCR2_region = self.PCR_dict["PCR2"]
@@ -78,7 +76,6 @@ class PrimerSet:
             # PCR2_Bam-R: add BamHI target site at 5'
             "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
         }
-
         return primers_tailed_dict
 
     def get_PCR_regions(self, global_seq):
@@ -90,7 +87,6 @@ class PrimerSet:
         pcr2_region = Region((pcr2_start, pcr2_end), global_seq)
         pcr_dict = {"PCR1": pcr1_region,
                     "PCR2": pcr2_region}
-
         return pcr_dict
 
     def get_product(self):
@@ -105,7 +101,6 @@ def design_primers(region):
         for j in ("LEFT", "RIGHT"):
             primer = Primer(p3_results, i, j)
             primer_dict[primer.id] = primer
-
     return primer_dict
 
 
@@ -126,7 +121,6 @@ def p3_design(region):
         "PRIMER_FIRST_BASE_INDEX": 1
     }
     results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
-
     return results
 
 
@@ -140,7 +134,6 @@ def write_primer_pairs(primer_dict):
 
         results_str += "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n" \
                        % (n+1, prod_size, lp.s(), lp.e(), rp.s(), rp.e(), lp.seq(), rp.seq(), lp.tm(), rp.tm())
-
     return results_str
 
 
@@ -164,7 +157,6 @@ def choose_primers(primer_dict, global_seq):
             i += 1
         else:
             bam_ok = True
-
     return primer_set
 
 

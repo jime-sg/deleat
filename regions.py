@@ -11,6 +11,7 @@ class Region:
     """
     Manage subsequence basic properties.
     """
+
     def __init__(self, coords, global_seq):
         """
 
@@ -42,5 +43,3 @@ class Region:
 
         self.__init__((self.start + displ, self.end + displ),
                       self.globalseq)
-
-
