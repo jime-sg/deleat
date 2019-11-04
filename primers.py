@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
+"""primers.py
 @author: Jimena Solana
 """
 
+from itertools import product
+
 import primer3
-from regions import Region
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Restriction import BamHI
-from itertools import product
+
+from regions import Region
 
 
 class Primer:
@@ -140,7 +141,7 @@ def write_primer_pairs(primer_dict):
 def choose_primers(primer_dict, global_seq):
     n_pairs = len(primer_dict[1]) // 2
     combinations = list(product(range(n_pairs), repeat=2))
-    # prioritize primer pair quality = minimize sum of primer pair indexes
+    # Prioritize primer pair quality = minimize sum of primer pair indexes
     combinations.sort(key=lambda x: x[0]+x[1])
     i = 0
     bam_ok = False

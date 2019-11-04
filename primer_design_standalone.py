@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
+"""primer_design_standalone.py
 @author: Jimena Solana
 """
 
 from Bio import SeqIO
 from Bio.Restriction import BamHI
+
 from regions import Region
 from primers import design_primers, write_primer_pairs, choose_primers, save_pcr_regions
 
@@ -14,9 +14,9 @@ def check_BamHItargets_and_repeats(seq, direction):
     seq_ok = False
     while not seq_ok:
         bam_ok = False
-        repeat_ok = True  # TEMP
+        repeat_ok = True  # FIXME
 
-        # check seq for BamHI target sites
+        # Check seq for BamHI target sites
         while not bam_ok:
             pos = BamHI.search(seq.subseq())
             if pos:
@@ -28,7 +28,7 @@ def check_BamHItargets_and_repeats(seq, direction):
             else:
                 bam_ok = True
 
-        # check seq for repetitive regions
+        # Check seq for repetitive regions
         # while not repeat_ok:
         # ...
         # if repeats:
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     genome = SeqIO.read(GENOME, "fasta")
     log = open(LOG_DIR + "primer_design.txt", "w")
 
-    # define initial regions
+    # Define initial regions
     del_region = Region(DEL_COORDS, genome)
     margin1_coords = (del_region.s() - MARGIN_SIZE,
                       del_region.s())
@@ -62,7 +62,7 @@ if __name__ == "__main__":
                       del_region.e() + MARGIN_SIZE)
     margin2 = Region(margin2_coords, genome)
 
-    # check margin region quality
+    # Check margin region quality
     log.write(sep + "Checking margins...\n")
     log.write("Initial locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
               % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
@@ -76,7 +76,7 @@ if __name__ == "__main__":
               % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
               )
 
-    # design primers
+    # Design primers
     log.write(sep + "Designing primers...\n")
     all_primers = {
         1: design_primers(margin1),
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     log.write("\nBest primer pairs for margin 2 (right):\n")
     log.write(write_primer_pairs(all_primers[2]))
 
-    # choose primer pairs
+    # Choose primer pairs
     log.write("\nChecking for BamHI targets in the megapriming product...\n")
     megapriming = choose_primers(all_primers, genome)
     log.write(sep)
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     for name, primer in megapriming.primers_tailed_dict.items():
         log.write("%s: %s\n" % (name, primer))
 
-    # define PCR regions
+    # Define PCR regions
     pcr1 = megapriming.PCR_dict["PCR1"]
     pcr2 = megapriming.PCR_dict["PCR2"]
     log.write("\nDetermined PCR regions for megapriming:\n")
