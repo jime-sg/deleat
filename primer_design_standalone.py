@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """primer_design_standalone.py
+# TODO
 @author: Jimena Solana
 """
 
@@ -11,6 +12,7 @@ from primers import design_primers, write_primer_pairs, choose_primers, save_pcr
 
 
 def check_BamHItargets_and_repeats(seq, direction):
+    """"""  # TODO
     seq_ok = False
     while not seq_ok:
         bam_ok = False

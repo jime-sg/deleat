@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """regions.py
+# TODO
 @author: Jimena Solana
 """
 
@@ -8,14 +9,11 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 class Region:
     """
-    Manage subsequence basic properties.
+    Manage subsequence basic properties. # TODO
     """
 
     def __init__(self, coords, global_seq):
-        """
-
-        :rtype: Bio.SeqRecord
-        """
+        """"""  # TODO
         self.start = coords[0]
         self.end = coords[1]
         self.globalseq = global_seq
@@ -23,18 +21,23 @@ class Region:
         self.subsequence = self.seqfeature.extract(global_seq).seq
 
     def subseq(self):
+        """"""  # TODO
         return self.subsequence
 
     def s(self):
+        """"""  # TODO
         return self.start
 
     def e(self):
+        """"""  # TODO
         return self.end
 
     def global_seq(self):
+        """"""  # TODO
         return self.globalseq
 
     def displace_past(self, position, direction):
+        """"""  # TODO
         if direction == "right":
             displ = position
         elif direction == "left":
