@@ -17,6 +17,8 @@ class Region:
         self.start = coords[0]
         self.end = coords[1]
         self.globalseq = global_seq
+        # Biopython is 1-based but FeatureLocation takes Python slicing-style
+        # positions: [20:30] -> 19..30
         self.seqfeature = SeqFeature(FeatureLocation(self.start - 1, self.end))
         self.subsequence = self.seqfeature.extract(global_seq).seq
 
