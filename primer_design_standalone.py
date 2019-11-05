@@ -8,7 +8,8 @@ from Bio import SeqIO
 from Bio.Restriction import BamHI
 
 from regions import Region
-from primers import design_primers, write_primer_pairs, choose_primers, save_pcr_regions
+from primers import (design_primers, write_primer_pairs, choose_primers,
+                     save_pcr_regions)
 
 
 def check_BamHItargets_and_repeats(seq, direction):
@@ -25,8 +26,11 @@ def check_BamHItargets_and_repeats(seq, direction):
                 pos = pos[0]
                 globalpos = pos + seq.s()
                 seq.displace_past(pos, direction)
-                log.write("!! BamHI target site found at %d. Location reset to %d - %d.\n"
-                          % (globalpos, seq.s(), seq.e()))
+                log.write(
+                    "!! BamHI target site found at %d. "
+                    "Location reset to %d - %d.\n"
+                    % (globalpos, seq.s(), seq.e())
+                )
             else:
                 bam_ok = True
 
@@ -66,17 +70,21 @@ if __name__ == "__main__":
 
     # Check margin region quality
     log.write(sep + "Checking margins...\n")
-    log.write("Initial locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-              % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
-              )
+    log.write(
+        "Initial locations:\n\tMargin 1 (left):  %d - %d\n\t"
+        "Margin 2 (right): %d - %d\n"
+        % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
+    )
     log.write("\nChecking margin 1...\n")
     check_BamHItargets_and_repeats(margin1, direction="right")
     log.write("\nChecking margin 2...\n")
     check_BamHItargets_and_repeats(margin2, direction="left")
     log.write("\nMargin quality check: done.")
-    log.write("\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\tMargin 2 (right): %d - %d\n"
-              % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
-              )
+    log.write(
+        "\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\t"
+        "Margin 2 (right): %d - %d\n"
+        % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
+    )
 
     # Design primers
     log.write(sep + "Designing primers...\n")

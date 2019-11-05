@@ -54,10 +54,10 @@ class Primer:
         self.id = primer_dir + "_" + str(primer_n)
         if primer_dir == "LEFT":  # Position returned by primer3 = start
             self.start = p3results_dict["PRIMER_%s" % self.id][0]
-            self.end = self.start + p3results_dict["PRIMER_%s" % self.id][1] - 1
+            self.end = self.start + p3results_dict["PRIMER_%s" % self.id][1]-1
         elif primer_dir == "RIGHT":  # Position returned by primer3 = end
             self.end = p3results_dict["PRIMER_%s" % self.id][0]
-            self.start = self.end - p3results_dict["PRIMER_%s" % self.id][1] + 1
+            self.start = self.end - p3results_dict["PRIMER_%s" % self.id][1]+1
         self.sequence = Seq(p3results_dict["PRIMER_%s_SEQUENCE" % self.id].upper())
         self.temp = p3results_dict["PRIMER_%s_TM" % self.id]
         self.penalty = p3results_dict["PRIMER_%s_PENALTY" % self.id]
@@ -68,19 +68,23 @@ class Primer:
         self.end_stability = p3results_dict["PRIMER_%s_END_STABILITY" % self.id]
 
     def seq(self):
-        """"""  # TODO
+        """Return the primer's sequence."""
         return self.sequence
 
     def s(self):
-        """"""  # TODO
+        """Return the primer's leftmost position on the template
+        sequence.
+        """
         return self.start
 
     def e(self):
-        """"""  # TODO
+        """Return the primer's rightmost position on the template
+        sequence.
+        """
         return self.end
 
     def tm(self):
-        """"""  # TODO
+        """Return the primer's melting temperature."""
         return self.temp
 
 
@@ -118,7 +122,8 @@ class PrimerSet:
             # PCR1_R: unchanged
             "PCR1_Rt": self.PCR1R.seq(),
             # PCR2_F: add revcomp of PCR1_R at 5'
-            "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower() + self.PCR2F.seq(),
+            "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
+                       + self.PCR2F.seq(),
             # PCR2_Bam-R: add BamHI target site at 5'
             "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
         }
@@ -176,15 +181,19 @@ def p3_design(region):
 
 def write_primer_pairs(primer_dict):
     """"""  # TODO
-    results_str = "N\tsize\tF_start-F_end..R_start-R_end\tseq_F\tseq_R\tTM_F (ºC)\tTM_R (ºC)\n"
+    results_str = ("N\tsize\tF_start-F_end..R_start-R_end\tseq_F\tseq_R\t"
+                   "TM_F (ºC)\tTM_R (ºC)\n")
     n_pairs = len(primer_dict)//2
     for n in range(n_pairs):
         lp = primer_dict["LEFT_%d" % n]
         rp = primer_dict["RIGHT_%d" % n]
         prod_size = rp.e() - lp.s() + 1
 
-        results_str += "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n" \
-                       % (n+1, prod_size, lp.s(), lp.e(), rp.s(), rp.e(), lp.seq(), rp.seq(), lp.tm(), rp.tm())
+        results_str += (
+                "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n"
+                % (n+1, prod_size, lp.s(), lp.e(), rp.s(), rp.e(),
+                   lp.seq(), rp.seq(), lp.tm(), rp.tm())
+        )
     return results_str
 
 
@@ -218,7 +227,13 @@ def save_pcr_regions(primer_set, path):
         pcr1 = primer_set.PCR1_region
         pcr2 = primer_set.PCR2_region
         prod = primer_set.get_product()
-        pcr1_r = SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d" % (pcr1.s(), pcr1.e()))
-        pcr2_r = SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d" % (pcr2.s(), pcr2.e()))
+        pcr1_r = (
+            SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d"
+            % (pcr1.s(), pcr1.e()))
+        )
+        pcr2_r = (
+            SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d"
+            % (pcr2.s(), pcr2.e()))
+        )
         prod_r = SeqRecord(prod, id="total_product", description="")
         SeqIO.write((pcr1_r, pcr2_r, prod_r), f, "fasta")
