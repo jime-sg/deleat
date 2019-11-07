@@ -25,7 +25,7 @@ def check_BamHItargets_and_repeats(seq, direction):
             if pos:
                 pos = pos[0]
                 globalpos = pos + seq.s()
-                seq.displace_past(pos, direction)
+                seq.shift_past(pos, direction)
                 log.write(
                     "!! BamHI target site found at %d. "
                     "Location reset to %d - %d.\n"
@@ -38,7 +38,7 @@ def check_BamHItargets_and_repeats(seq, direction):
         # while not repeat_ok:
         # ...
         # if repeats:
-        # seq.displace_past(x, dir)
+        # seq.shift_past(x, dir)
         # log.write
         # else:
         # repeat_ok = True

@@ -123,7 +123,7 @@ class PrimerSet:
             "PCR1_Rt": self.PCR1R.seq(),
             # PCR2_F: add revcomp of PCR1_R at 5'
             "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
-                       + self.PCR2F.seq(),
+            + self.PCR2F.seq(),
             # PCR2_Bam-R: add BamHI target site at 5'
             "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
         }
@@ -199,7 +199,7 @@ def write_primer_pairs(primer_dict):
 
 def choose_primers(primer_dict, global_seq):
     """"""  # TODO
-    n_pairs = len(primer_dict[1]) // 2
+    n_pairs = len(primer_dict[1])//2
     combinations = list(product(range(n_pairs), repeat=2))
     # Prioritize primer pair quality = minimize sum of primer pair indexes
     combinations.sort(key=lambda x: x[0]+x[1])

@@ -38,7 +38,7 @@ class Region:
         """"""  # TODO
         return self.globalseq
 
-    def displace_past(self, position, direction):
+    def shift_past(self, position, direction):
         """"""  # TODO
         if direction == "right":
             displ = position
