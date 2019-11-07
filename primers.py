@@ -89,12 +89,33 @@ class Primer:
 
 
 class PrimerSet:
-    """
-    # TODO
+    """A set of four primers that defines two PCR regions for megapriming.
+    
+    Attributes:
+        PCR1F, PCR1R, PCR2F, PCR2R (regions.Region): forward and reverse
+            primers for PCR1 (left), and forward and reverse primers for PCR2
+            (right), respectively.
+        primers_raw_dict (dict): dictionary of untailed (raw) primers.
+        PCR1Ft, PCR1Rt, PCR2Ft, PCR2Rt (Bio.Seq.Seq): primers with added tails
+            necessary for megapriming.
+        primers_tailed_dict (dict): dictionary of tailed primers.
+        PCR_dict (dict): dictionary of PCR regions defined by the primer set.
+        PCR1_region (regions.Region): PCR1 (left) region defined by primers
+            PCR1F and PCR1R.
+        PCR2_region (regions.Region): PCR2 (left) region defined by primers
+            PCR2F and PCR2R.
     """
 
     def __init__(self, primer_dict, global_seq):
-        """"""  # TODO
+        """Define the set of four primers, add tails and delimit PCR regions.
+
+        Inits PrimerSet with PCR1F, PCR1R, PCR2F, PCR2R, primers_raw_dict,
+        primers_tailed_dict, PCR1Ft, PCR1Rt, PCR2Ft, PCR2Rt, PCR_dict,
+        PCR1_region and PCR2_region.
+        Args:
+             primer_dict (dict): dictionary of 1F, 1R, 2F and 2R primers.
+             global_seq (Bio.Seq.Seq): template sequence.
+        """
         self.PCR1F = primer_dict["1F"]
         self.PCR1R = primer_dict["1R"]
         self.PCR2F = primer_dict["2F"]
@@ -115,22 +136,33 @@ class PrimerSet:
         self.PCR2_region = self.PCR_dict["PCR2"]
 
     def add_tails(self):
-        """"""  # TODO
+        """Adds tails necessary for megapriming to corresponding primers.
+
+        - PCR1_Bam-F: add BamHI target site at 5'
+        - PCR1_R: unchanged
+        - PCR2_F: add reverse complement of PCR1_R at 5'
+        - PCR2_Bam-R: add BamHI target site at 5'
+        Returns:
+             primers_tailed_dict (dict): dictionary of tailed primers.
+        """
         primers_tailed_dict = {
-            # PCR1_Bam-F: add BamHI target site at 5'
             "PCR1_Ft": Seq("gcacggatcc") + self.PCR1F.seq(),
-            # PCR1_R: unchanged
             "PCR1_Rt": self.PCR1R.seq(),
-            # PCR2_F: add revcomp of PCR1_R at 5'
             "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
-            + self.PCR2F.seq(),
-            # PCR2_Bam-R: add BamHI target site at 5'
+                       + self.PCR2F.seq(),
             "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
         }
         return primers_tailed_dict
 
     def get_PCR_regions(self, global_seq):
-        """"""  # TODO
+        """Defines PCR regions (left+right) delimited by the primer set.
+        
+        Args:
+            global_seq: 
+
+        Returns:
+
+        """  # TODO
         pcr1_start = self.PCR1F.s()
         pcr1_end = self.PCR1R.e()
         pcr2_start = self.PCR2F.s()
@@ -146,10 +178,10 @@ class PrimerSet:
         return self.PCR1_region.subseq() + self.PCR2_region.subseq()
 
 
-def design_primers(region):
+def design_primers(region, crit_pos):
     """"""  # TODO
     primer_dict = {}
-    p3_results = p3_design(region)
+    p3_results = p3_design(region, crit_pos)
     n_pairs = p3_results["PRIMER_PAIR_NUM_RETURNED"]
     for i in range(n_pairs):
         for j in ("LEFT", "RIGHT"):
@@ -158,13 +190,25 @@ def design_primers(region):
     return primer_dict
 
 
-def p3_design(region):
+def p3_design(region, crit_pos):
     """"""  # TODO
     start = region.s()
     end = region.e()
+    x = crit_pos[0]
+    d = crit_pos[1]
+    if d == "L":  # PCR1 (left)
+        # Reverse primer must be after critical position
+        y = end-x
+        region_list = [-1, -1, x, y]
+    elif d == "R":  # PCR2 (right)
+        # Forward primer must be before critical position
+        y = x-start
+        region_list = [x-y, y, -1, -1]
+
     p3_seqargs = {
         "SEQUENCE_TEMPLATE": str(region.global_seq().seq),
-        "SEQUENCE_INCLUDED_REGION": [start, end-start]
+        "SEQUENCE_INCLUDED_REGION": [start, end-start],
+        "SEQUENCE_PRIMER_PAIR_OK_REGION_LIST": region_list
     }
     p3_globalargs = {
         "PRIMER_TASK": "generic",
@@ -173,7 +217,7 @@ def p3_design(region):
         # "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
         # "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
         "PRIMER_NUM_RETURN": 20,
-        "PRIMER_FIRST_BASE_INDEX": 1
+        "PRIMER_FIRST_BASE_INDEX": 1  # 1-based indexing
     }
     results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
     return results
