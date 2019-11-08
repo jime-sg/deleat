@@ -234,7 +234,13 @@ def p3_design(region, crit_pos):
 
 
 def write_primer_pairs(primer_dict):
-    """"""  # TODO
+    """Convert dictionary of primer design results into a readable table.
+
+    Args:
+        primer_dict (dict): primer design results for one region.
+    Returns:
+        results_str (str): same results, parsed and readable.
+    """
     results_str = ("N\tsize\tF_start-F_end..R_start-R_end\tseq_F\tseq_R\t"
                    "TM_F (ºC)\tTM_R (ºC)\n")
     n_pairs = len(primer_dict)//2
@@ -273,9 +279,6 @@ def choose_primers(primer_dict, global_seq):
         mp_product = primer_set.get_product()
         size_diff = len(primer_set.PCR1_region) - len(primer_set.PCR2_region)
 
-        with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
-            f.write(str(size_diff) + "\n")
-
         if size_diff > PCR_REGIONS_MAX_SIZEDIFF:
             i += 1
             bam_ok = False
@@ -287,11 +290,20 @@ def choose_primers(primer_dict, global_seq):
             sizediff_ok = False
         else:
             bam_ok = True
+
+        with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
+            f.write(str(size_diff) + "\n")
+
     return primer_set
 
 
 def save_pcr_regions(primer_set, path):
-    """"""  # TODO
+    """Save defined PCR regions (and total product) to a FASTA file.
+
+    Args:
+        primer_set (primers.PrimerSet): chosen primers.
+        path (str): output file path.
+    """
     with open(path + "PCR_regions.fna", "w") as f:
         pcr1 = primer_set.PCR1_region
         pcr2 = primer_set.PCR2_region

@@ -14,11 +14,11 @@ from primers import (design_primers, write_primer_pairs, choose_primers,
 
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
 LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2/"
-DEL_COORDS = (12039, 106313)
+DEL_COORDS = (14939, 90413)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
 
-sep = "-" * 80 + "\n"
+sep = "-"*80 + "\n"
 
 
 def check_BamHItargets_and_repeats(seq, direction):
