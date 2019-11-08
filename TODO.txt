@@ -3,3 +3,4 @@
 - Robustez:
  -> Limitar nº de llamadas a displace_past()
  -> Qué hacer si con todas las combinaciones de pares de primers sigue habiendo BamHI en el producto de megapriming
+ -> Qué hacer si con todas las combinaciones de pares de primers la diferencia de tamaño PCR1-PCR2 es > 150

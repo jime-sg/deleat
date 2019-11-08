@@ -34,6 +34,10 @@ class Region:
         """"""  # TODO
         return self.end
 
+    def __len__(self):
+        """"""  # TODO
+        return len(self.subseq())
+
     def global_seq(self):
         """"""  # TODO
         return self.globalseq

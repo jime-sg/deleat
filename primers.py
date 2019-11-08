@@ -15,6 +15,16 @@ from Bio.Restriction import BamHI
 from regions import Region
 
 
+# Primer3 settings
+PCR_REGION_SIZE_RANGE = [600, 1000]
+PCR_REGION_OPT_SIZE = 800
+LT_SIZE_WT = 0.005
+GT_SIZE_WT = 0.005
+N_PRIMERS = 20
+
+PCR_REGIONS_MAX_SIZEDIFF = 150
+
+
 class Primer:
     """
     # TODO
@@ -197,11 +207,11 @@ def p3_design(region, crit_pos):
     x = crit_pos[0]
     d = crit_pos[1]
     if d == "L":  # PCR1 (left)
-        # Reverse primer must be after critical position
+        # Reverse primer must be between critical position and margin end
         y = end-x
         region_list = [-1, -1, x, y]
     elif d == "R":  # PCR2 (right)
-        # Forward primer must be before critical position
+        # Forward primer must be between margin start and critical position
         y = x-start
         region_list = [x-y, y, -1, -1]
 
@@ -212,11 +222,11 @@ def p3_design(region, crit_pos):
     }
     p3_globalargs = {
         "PRIMER_TASK": "generic",
-        "PRIMER_PRODUCT_SIZE_RANGE": [750, 850],
-        # "PRIMER_PRODUCT_OPT_SIZE": 800,
-        # "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": 0.2,
-        # "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": 0.2,
-        "PRIMER_NUM_RETURN": 20,
+        "PRIMER_PRODUCT_SIZE_RANGE": PCR_REGION_SIZE_RANGE,
+        "PRIMER_PRODUCT_OPT_SIZE": PCR_REGION_OPT_SIZE,
+        "PRIMER_PAIR_WT_PRODUCT_SIZE_LT": LT_SIZE_WT,
+        "PRIMER_PAIR_WT_PRODUCT_SIZE_GT": GT_SIZE_WT,
+        "PRIMER_NUM_RETURN": N_PRIMERS,
         "PRIMER_FIRST_BASE_INDEX": 1  # 1-based indexing
     }
     results = primer3.bindings.designPrimers(p3_seqargs, p3_globalargs)
@@ -232,6 +242,8 @@ def write_primer_pairs(primer_dict):
         lp = primer_dict["LEFT_%d" % n]
         rp = primer_dict["RIGHT_%d" % n]
         prod_size = rp.e() - lp.s() + 1
+        with open("/home/jimena/Escritorio/product_lengths.txt", "a") as f:  # FIXME
+            f.write(str(prod_size) + "\n")
 
         results_str += (
                 "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n"
@@ -248,8 +260,9 @@ def choose_primers(primer_dict, global_seq):
     # Prioritize primer pair quality = minimize sum of primer pair indexes
     combinations.sort(key=lambda x: x[0]+x[1])
     i = 0
+    sizediff_ok = False
     bam_ok = False
-    while not bam_ok:
+    while not sizediff_ok and not bam_ok:
         chosen_primers = {
             "1F": primer_dict[1]["LEFT_%d" % combinations[i][0]],
             "1R": primer_dict[1]["RIGHT_%d" % combinations[i][0]],
@@ -258,8 +271,20 @@ def choose_primers(primer_dict, global_seq):
         }
         primer_set = PrimerSet(chosen_primers, global_seq)
         mp_product = primer_set.get_product()
+        size_diff = len(primer_set.PCR1_region) - len(primer_set.PCR2_region)
+
+        with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
+            f.write(str(size_diff) + "\n")
+
+        if size_diff > PCR_REGIONS_MAX_SIZEDIFF:
+            i += 1
+            bam_ok = False
+            continue
+        else:
+            sizediff_ok = True
         if BamHI.search(mp_product):
             i += 1
+            sizediff_ok = False
         else:
             bam_ok = True
     return primer_set

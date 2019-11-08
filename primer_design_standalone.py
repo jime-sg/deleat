@@ -14,7 +14,7 @@ from primers import (design_primers, write_primer_pairs, choose_primers,
 
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
 LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2/"
-DEL_COORDS = (1307339, 1327913)
+DEL_COORDS = (12039, 106313)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
 
@@ -68,8 +68,11 @@ if __name__ == "__main__":
     margin2_coords = (del_region.e() - INTERNAL_MARGIN,
                       del_region.e() + MARGIN_SIZE - INTERNAL_MARGIN)
     margin2 = Region(margin2_coords, genome)
-    log.write(sep + "##### PRIMER DESIGN FOR DELETION %d - %d #####\n"
-              % (del_region.s(), del_region.e()))
+    log.write(
+        sep + "##### PRIMER DESIGN FOR DELETION %d - %d (%.1f kb) #####\n"
+        % (del_region.s(), del_region.e(),
+           (del_region.e()-del_region.s())/1000)
+    )
 
     # Check margin region quality
     log.write(sep + "Checking margins...\n")
@@ -101,11 +104,11 @@ if __name__ == "__main__":
     log.write(write_primer_pairs(all_primers[2]))
 
     # Choose primer pairs
-    log.write("\nChecking for BamHI targets in the megapriming product...\n")
+    log.write("\nChoosing primers...")
     megapriming = choose_primers(all_primers, genome)
-    log.write("Done.\n")
+    log.write("\nDone.\n")
     log.write(sep)
-    log.write("Selected pairs of primers:\n")
+    log.write("\nSelected pairs of primers:\n")
     for name, primer in megapriming.primers_raw_dict.items():
         log.write("%s: %s\n" % (name, primer.seq()))
     log.write("\nAdded tails:\n")
