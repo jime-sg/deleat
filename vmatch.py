@@ -10,17 +10,18 @@ from os import makedirs
 def run(genome_file, repeat_length, out_path):
     # Vmatch: index genome
     makedirs("%sindex" % out_path, exist_ok=True)
-    #mkvtree = subprocess.check_output("which mkvtree", text=True, shell=True).strip()
     subprocess.call(
         ["mkvtree", "-db", genome_file,
          "-dna", "-indexname", "%sindex/index" % out_path, "-pl", "-allout"]
     )
     # Vmatch: find repeats of length >= repeat_length
-    subprocess.call(
-        ["vmatch", "-l", str(repeat_length), "-d", "-p",
-         "-noidentity", "-nodist", "-noevalue", "-noscore",
-         "%sindex/index" % out_path, ">", "%srepeats.txt" % out_path]
-    )
+    with open("%srepeats.txt" % out_path, "w") as f:
+        subprocess.call(
+            ["vmatch", "-l", str(repeat_length), "-d", "-p",
+             "-noidentity", "-nodist", "-noevalue", "-noscore",
+             "%sindex/index" % out_path],
+            stdout=f
+        )
     repeats_list = parse_results("%srepeats.txt" % out_path)
     return repeats_list
 
