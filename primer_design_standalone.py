@@ -8,26 +8,27 @@ from Bio import SeqIO
 from Bio.Restriction import BamHI
 
 from regions import Region
+import vmatch
 from primers import (design_primers, write_primer_pairs, choose_primers,
                      save_pcr_regions)
 
 
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
 LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2/"
-DEL_COORDS = (14939, 90413)
+DEL_COORDS = (33900, 80000)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
+HR_LENGTH = 20
 
 sep = "-"*80 + "\n"
 
 
-def check_BamHItargets_and_repeats(seq, direction):
+def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
     """"""  # TODO
     seq_ok = False
+    bam_ok = False
+    repeat_ok = False
     while not seq_ok:
-        bam_ok = False
-        repeat_ok = True  # FIXME
-
         # Check seq for BamHI target sites
         while not bam_ok:
             pos = BamHI.search(seq.subseq())
@@ -35,6 +36,7 @@ def check_BamHItargets_and_repeats(seq, direction):
                 pos = pos[0]
                 globalpos = pos + seq.s()
                 seq.shift_past(pos, direction)
+                repeat_ok = False
                 log.write(
                     "!! BamHI target site found at %d. "
                     "Location reset to %d - %d.\n"
@@ -44,13 +46,22 @@ def check_BamHItargets_and_repeats(seq, direction):
                 bam_ok = True
 
         # Check seq for repetitive regions
-        # while not repeat_ok:
-        # ...
-        # if repeats:
-        # seq.shift_past(x, dir)
-        # log.write
-        # else:
-        # repeat_ok = True
+        while not repeat_ok:
+            repeat_ok = True
+            for repeat in repeats_list:
+                if seq.overlap(repeat) > L:
+                    if direction == "right":
+                        seq.shift_past(repeat[1], direction)
+                    elif direction == "left":
+                        seq.shift_past(repeat[0], direction)
+                    repeat_ok = False
+                    bam_ok = False
+                    log.write(
+                        "!! Repeated sequence found at (%d-%d). "
+                        "Location reset to %d - %d.\n"
+                        % (repeat[0], repeat[1], seq.s(), seq.e())
+                    )
+                    break
 
         if bam_ok and repeat_ok:
             seq_ok = True
@@ -74,6 +85,10 @@ if __name__ == "__main__":
            (del_region.e()-del_region.s())/1000)
     )
 
+    # Calculate list of all repeats of length >= HR_LENGTH
+    # (possible substrates for homologous recombination)
+    repeats_list = vmatch.run(GENOME, HR_LENGTH, LOG_DIR)
+
     # Check margin region quality
     log.write(sep + "Checking margins...\n")
     log.write(
@@ -82,9 +97,13 @@ if __name__ == "__main__":
         % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
     )
     log.write("\nChecking margin 1...\n")
-    check_BamHItargets_and_repeats(margin1, direction="right")
+    check_BamHItargets_and_repeats(margin1,
+                                   repeats_list, L=HR_LENGTH,
+                                   direction="right")
     log.write("\nChecking margin 2...\n")
-    check_BamHItargets_and_repeats(margin2, direction="left")
+    check_BamHItargets_and_repeats(margin2,
+                                   repeats_list, L=HR_LENGTH,
+                                   direction="left")
     log.write("\nDone.")
     log.write(
         "\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\t"

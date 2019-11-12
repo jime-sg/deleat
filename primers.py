@@ -146,7 +146,7 @@ class PrimerSet:
         self.PCR2_region = self.PCR_dict["PCR2"]
 
     def add_tails(self):
-        """Adds tails necessary for megapriming to corresponding primers.
+        """Add tails necessary for megapriming to corresponding primers.
 
         - PCR1_Bam-F: add BamHI target site at 5'
         - PCR1_R: unchanged
@@ -165,7 +165,7 @@ class PrimerSet:
         return primers_tailed_dict
 
     def get_PCR_regions(self, global_seq):
-        """Defines PCR regions (left+right) delimited by the primer set.
+        """Define PCR regions (left+right) delimited by the primer set.
         
         Args:
             global_seq: 

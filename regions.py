@@ -51,3 +51,16 @@ class Region:
 
         self.__init__((self.start + displ, self.end + displ),
                       self.globalseq)
+
+    def overlap(self, coords):
+        """Calculate length of overlap with a given location.
+
+        Args:
+            coords (tuple): start and end of location.
+        Returns:
+            i (int): length of overlap between region and given location.
+        """
+        i = min(self.e(), coords[0]) - max(self.s(), coords[1]) + 1
+        if i < 0:
+            i = 0
+        return i
