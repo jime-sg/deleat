@@ -277,7 +277,8 @@ def choose_primers(primer_dict, global_seq):
         }
         primer_set = PrimerSet(chosen_primers, global_seq)
         mp_product = primer_set.get_product()
-        size_diff = len(primer_set.PCR1_region) - len(primer_set.PCR2_region)
+        size_diff = abs(len(primer_set.PCR1_region)
+                        - len(primer_set.PCR2_region))
 
         if size_diff > PCR_REGIONS_MAX_SIZEDIFF:
             i += 1
