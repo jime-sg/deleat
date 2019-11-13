@@ -305,7 +305,7 @@ def save_pcr_regions(primer_set, path):
         primer_set (primers.PrimerSet): chosen primers.
         path (str): output file path.
     """
-    with open(path + "PCR_regions.fna", "w") as f:
+    with open("%s/PCR_regions.fna" % path, "w") as f:
         pcr1 = primer_set.PCR1_region
         pcr2 = primer_set.PCR2_region
         prod = primer_set.get_product()

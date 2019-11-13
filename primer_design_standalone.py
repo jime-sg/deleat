@@ -14,7 +14,7 @@ from primers import (design_primers, write_primer_pairs, choose_primers,
 
 
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
-LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2/"
+LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2"
 DEL_COORDS = (33900, 80000)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
@@ -71,7 +71,7 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
 
 if __name__ == "__main__":
     genome = SeqIO.read(GENOME, "fasta")
-    log = open(LOG_DIR + "primer_design.txt", "w")
+    log = open("%s/primer_design.txt" % LOG_DIR, "w")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
            pcr2.s(), pcr2.e(), pcr2.e()-pcr2.s())
     )
     save_pcr_regions(megapriming, LOG_DIR)
-    log.write("\nPCR region sequences saved at %sPCR_regions.fna.\n" % LOG_DIR)
+    log.write("\nPCR region sequences saved at %s/PCR_regions.fna.\n" % LOG_DIR)
 
     log.write(sep)
     log.close()
