@@ -33,10 +33,10 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
         while not bam_ok:
             pos = BamHI.search(seq.subseq())
             if pos:
-                pos = pos[0]
-                globalpos = pos + seq.s()
-                seq.shift_past(pos, direction)
+                offset = pos[0]
+                seq.shift_past(offset, direction)
                 repeat_ok = False
+                globalpos = seq.s() + offset
                 log.write(
                     "!! BamHI target site found at %d. "
                     "Location reset to %d - %d.\n"
@@ -51,9 +51,11 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
             for repeat in repeats_list:
                 if seq.overlap(repeat) > L:
                     if direction == "right":
-                        seq.shift_past(repeat[1], direction)
+                        offset = repeat[1] - seq.s()
+                        seq.shift_past(offset, direction)
                     elif direction == "left":
-                        seq.shift_past(repeat[0], direction)
+                        offset = repeat[0] - seq.s()
+                        seq.shift_past(offset, direction)
                     repeat_ok = False
                     bam_ok = False
                     log.write(

@@ -45,11 +45,11 @@ class Region:
     def shift_past(self, position, direction):
         """"""  # TODO
         if direction == "right":
-            displ = position
+            offset = position
         elif direction == "left":
-            displ = -(len(self.subsequence) - position)
+            offset = -(len(self.subsequence) - position)
 
-        self.__init__((self.start + displ, self.end + displ),
+        self.__init__((self.start + offset, self.end + offset),
                       self.globalseq)
 
     def overlap(self, coords):
@@ -60,7 +60,7 @@ class Region:
         Returns:
             i (int): length of overlap between region and given location.
         """
-        i = min(self.e(), coords[0]) - max(self.s(), coords[1]) + 1
+        i = min(self.e(), coords[1]) - max(self.s(), coords[0]) + 1
         if i < 0:
             i = 0
         return i
