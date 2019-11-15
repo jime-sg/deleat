@@ -1,6 +1,6 @@
 - Poner argparser a primer_design_standalone.py
 - Poner regiones de primers en mayúsculas en PCR1/2.fna
 - Robustez:
- -> Limitar nº de llamadas a displace_past()
+ -> Limitar nº de llamadas a displace_past() (no quedarse sin región delecionada!)
  -> Qué hacer si con todas las combinaciones de pares de primers sigue habiendo BamHI en el producto de megapriming
  -> Qué hacer si con todas las combinaciones de pares de primers la diferencia de tamaño PCR1-PCR2 es > 150

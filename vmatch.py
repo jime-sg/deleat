@@ -4,16 +4,23 @@
 """
 
 import subprocess
-from os import makedirs
+from os import path, makedirs
 
 
 def run(genome_file, repeat_length, out_path):
-    # Vmatch: index genome
-    makedirs("%s/vmatch" % out_path, exist_ok=True)
-    subprocess.call(
-        ["mkvtree", "-db", genome_file,
-         "-dna", "-indexname", "%s/vmatch/index" % out_path, "-pl", "-allout"]
+    index_files = (
+        "index.al1", "index.bwt", "index.lcp", "index.ois", "index.sds",
+        "index.sti1", "index.tis", "index.bck", "index.des", "index.llv",
+        "index.prj", "index.skp", "index.suf"
     )
+    if not all([path.isfile("%s/vmatch/%s" % (out_path, f))
+                for f in index_files]):
+        makedirs("%s/vmatch" % out_path, exist_ok=True)
+        # Vmatch: index genome
+        subprocess.call(
+            ["mkvtree", "-db", genome_file, "-dna",
+             "-indexname", "%s/vmatch/index" % out_path, "-pl", "-allout"]
+        )
     # Vmatch: find repeats of length >= repeat_length
     with open("%s/vmatch/repeats.txt" % out_path, "w") as f:
         subprocess.call(
