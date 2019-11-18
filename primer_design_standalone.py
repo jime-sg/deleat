@@ -15,7 +15,7 @@ from primers import (design_primers, write_primer_pairs, choose_primers,
 
 GENOME = "/home/jimena/Bartonella/NC_005955.fna"
 LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2"
-DEL_COORDS = (33900, 80000)
+DEL_COORDS = (1307339, 1327913)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
 HR_LENGTH = 20

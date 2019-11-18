@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+# TODO
 @author: Jimena Solana
 """
 
@@ -8,6 +9,7 @@ from os import path, makedirs
 
 
 def run(genome_file, repeat_length, out_path):
+    """"""  # TODO
     index_files = (
         "index.al1", "index.bwt", "index.lcp", "index.ois", "index.sds",
         "index.sti1", "index.tis", "index.bck", "index.des", "index.llv",
@@ -34,6 +36,7 @@ def run(genome_file, repeat_length, out_path):
 
 
 def parse_results(results_file):
+    """"""  # TODO
     repeats_list = []
     with open(results_file, "r") as f:
         for line in f:

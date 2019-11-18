@@ -49,7 +49,7 @@ class Primer:
         
         Parse results dictionary returned by primer3 in order to extract
         all information about a primer, and save it to instance
-        attributes: init Primer with id, start, end, sequence, temp,
+        attributes: inits Primer with id, start, end, sequence, temp,
         penalty, gc_perc, self_any_th, self_end_th, hairpin_th and
         end_stability.
         Args:
