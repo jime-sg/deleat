@@ -4,6 +4,8 @@
 @author: Jimena Solana
 """
 
+from argparse import ArgumentParser
+
 from Bio import SeqIO
 from Bio.Restriction import BamHI
 
@@ -13,13 +15,8 @@ from primers import (design_primers, write_primer_pairs, choose_primers,
                      save_pcr_regions)
 
 
-GENOME = "/home/jimena/Bartonella/NC_005955.fna"
-LOG_DIR = "/home/jimena/Bartonella/deletions/deletion2"
-DEL_COORDS = (1307339, 1327913)
 MARGIN_SIZE = 1000
 INTERNAL_MARGIN = 200
-HR_LENGTH = 20
-
 sep = "-"*80 + "\n"
 
 
@@ -70,6 +67,37 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
 
 
 if __name__ == "__main__":
+    # Parse command-line arguments and init constants
+    parser = ArgumentParser(
+        description="Design primers for a large genomic deletion by megapriming."
+    )
+    parser.add_argument(
+        "-g", dest="GENOME", required=True,
+        help="file containing genome sequence in FASTA format")
+    parser.add_argument(
+        "-l", dest="LOG_DIR", required=True,
+        help="directory for output files")
+    parser.add_argument(
+        "-n", dest="DEL_NAME", required=True,
+        help="name of desired deletion (e.g. D2)")
+    parser.add_argument(
+        "-d1", dest="DEL_START", required=True, type=int,
+        help="start position of desired deletion")
+    parser.add_argument(
+        "-d2", dest="DEL_END", required=True, type=int,
+        help="end position of desired deletion")
+    parser.add_argument(
+        "-L", dest="HR_LENGTH", metavar="HR_LENGTH", type=int, default=20,
+        choices=range(15, 100),
+        help=("min substrate length required for homologous recombination "
+              "events (default %(default)s bp)"))
+    args = parser.parse_args()
+
+    GENOME = args.GENOME
+    LOG_DIR = args.LOG_DIR
+    DEL_COORDS = (args.DEL_START, args.DEL_END)
+    DEL_NAME = args.DEL_NAME
+    HR_LENGTH = args.HR_LENGTH
     genome = SeqIO.read(GENOME, "fasta")
     log = open("%s/primer_design.txt" % LOG_DIR, "w")
 
@@ -82,8 +110,8 @@ if __name__ == "__main__":
                       del_region.e() + MARGIN_SIZE - INTERNAL_MARGIN)
     margin2 = Region(margin2_coords, genome)
     log.write(
-        sep + "##### PRIMER DESIGN FOR DELETION %d - %d (%.1f kb) #####\n"
-        % (del_region.s(), del_region.e(),
+        sep + "##### PRIMER DESIGN FOR DELETION '%s' %d - %d (%.1f kb) #####\n"
+        % (DEL_NAME, del_region.s(), del_region.e(),
            (del_region.e()-del_region.s())/1000)
     )
 
