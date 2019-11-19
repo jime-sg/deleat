@@ -11,8 +11,7 @@ from Bio.Restriction import BamHI
 
 from regions import Region
 import vmatch
-from primers import (design_primers, write_primer_pairs, choose_primers,
-                     save_pcr_regions)
+import primers
 
 
 MARGIN_SIZE = 1000
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
     genome = SeqIO.read(GENOME, "fasta")
-    log = open("%s/primer_design.txt" % LOG_DIR, "w")
+    log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)
@@ -144,17 +143,17 @@ if __name__ == "__main__":
     # Design primers
     log.write(sep + "Designing primers...\n")
     all_primers = {
-        1: design_primers(margin1, crit_pos=(del_region.s(), "L")),
-        2: design_primers(margin2, crit_pos=(del_region.e(), "R"))
+        1: primers.design(margin1, crit_pos=(del_region.s(), "L")),
+        2: primers.design(margin2, crit_pos=(del_region.e(), "R"))
     }
     log.write("\nBest primer pairs for margin 1 (left):\n")
-    log.write(write_primer_pairs(all_primers[1]))
+    log.write(primers.write_pairs(all_primers[1]))
     log.write("\nBest primer pairs for margin 2 (right):\n")
-    log.write(write_primer_pairs(all_primers[2]))
+    log.write(primers.write_pairs(all_primers[2]))
 
     # Choose primer pairs
     log.write("\nChoosing primers...")
-    megapriming = choose_primers(all_primers, genome)
+    megapriming = primers.choose(all_primers, genome)
     log.write("\nDone.\n")
     log.write(sep)
     log.write("\nSelected pairs of primers:\n")
@@ -174,8 +173,11 @@ if __name__ == "__main__":
         % (pcr1.s(), pcr1.e(), pcr1.e()-pcr1.s(),
            pcr2.s(), pcr2.e(), pcr2.e()-pcr2.s())
     )
-    save_pcr_regions(megapriming, LOG_DIR)
-    log.write("\nPCR region sequences saved at %s/PCR_regions.fna.\n" % LOG_DIR)
+    primers.save_pcr_regions(megapriming, DEL_NAME, LOG_DIR)
+    log.write(
+        "\nPCR region sequences saved at %s/%s_PCR_regions.fna.\n"
+        % (LOG_DIR, DEL_NAME)
+    )
 
     log.write(sep)
     log.close()

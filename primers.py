@@ -188,7 +188,7 @@ class PrimerSet:
         return self.PCR1_region.subseq() + self.PCR2_region.subseq()
 
 
-def design_primers(region, crit_pos):
+def design(region, crit_pos):
     """"""  # TODO
     primer_dict = {}
     p3_results = p3_design(region, crit_pos)
@@ -233,7 +233,7 @@ def p3_design(region, crit_pos):
     return results
 
 
-def write_primer_pairs(primer_dict):
+def write_pairs(primer_dict):
     """Convert dictionary of primer design results into a readable table.
 
     Args:
@@ -259,7 +259,7 @@ def write_primer_pairs(primer_dict):
     return results_str
 
 
-def choose_primers(primer_dict, global_seq):
+def choose(primer_dict, global_seq):
     """"""  # TODO
     n_pairs = len(primer_dict[1])//2
     combinations = list(product(range(n_pairs), repeat=2))
@@ -298,24 +298,24 @@ def choose_primers(primer_dict, global_seq):
     return primer_set
 
 
-def save_pcr_regions(primer_set, path):
+def save_pcr_regions(primer_set, del_name, path):
     """Save defined PCR regions (and total product) to a FASTA file.
 
     Args:
         primer_set (primers.PrimerSet): chosen primers.
         path (str): output file path.
     """
-    with open("%s/PCR_regions.fna" % path, "w") as f:
+    with open("%s/%s_PCR_regions.fna" % (path, del_name), "w") as f:
         pcr1 = primer_set.PCR1_region
         pcr2 = primer_set.PCR2_region
         prod = primer_set.get_product()
         pcr1_r = (
-            SeqRecord(pcr1.subseq(), id="PCR1", description="%d:%d"
-            % (pcr1.s(), pcr1.e()))
+            SeqRecord(pcr1.subseq(), id="%s_PCR1" % del_name,
+                      description="%d:%d" % (pcr1.s(), pcr1.e()))
         )
         pcr2_r = (
-            SeqRecord(pcr2.subseq(), id="PCR2", description="%d:%d"
-            % (pcr2.s(), pcr2.e()))
+            SeqRecord(pcr2.subseq(), id="%s_PCR2" % del_name,
+                      description="%d:%d" % (pcr2.s(), pcr2.e()))
         )
-        prod_r = SeqRecord(prod, id="total_product", description="")
+        prod_r = SeqRecord(prod, id="%s_product" % del_name, description="")
         SeqIO.write((pcr1_r, pcr2_r, prod_r), f, "fasta")
