@@ -89,7 +89,11 @@ if __name__ == "__main__":
         "-L", dest="HR_LENGTH", metavar="HR_LENGTH", type=int, default=20,
         choices=range(15, 100),
         help=("min substrate length required for homologous recombination "
-              "events (default %(default)s bp)"))
+              "events (optional, default %(default)s bp)"))
+    parser.add_argument(
+        "-t", dest="LOCUS_TAG", default="",
+        help=("locus tag of first deleted gene (optional, for primer naming "
+              "purposes only)"))
     args = parser.parse_args()
 
     GENOME = args.GENOME
@@ -97,6 +101,7 @@ if __name__ == "__main__":
     DEL_COORDS = (args.DEL_START, args.DEL_END)
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
+    LOCUS_TAG = args.LOCUS_TAG
     genome = SeqIO.read(GENOME, "fasta")
     log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
 
@@ -161,7 +166,8 @@ if __name__ == "__main__":
         log.write("%s: %s\n" % (name, primer.seq()))
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
-        log.write("%s: %s\n" % (name, primer))
+        syst_name = primers.get_name(DEL_NAME, name, 1, LOCUS_TAG, 1)  # FIXME
+        log.write("%s: %s\n" % (syst_name, primer))
 
     # Define PCR regions
     pcr1 = megapriming.PCR_dict["PCR1"]

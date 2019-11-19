@@ -298,6 +298,27 @@ def choose(primer_dict, global_seq):
     return primer_set
 
 
+def get_name(del_name, primer_id, design_n, locus_tag, primer_n):
+    """"""  # TODO
+    if locus_tag:
+        locus_tag = int(''.join(c for c in locus_tag if c.isdigit()))
+    pcr = int(primer_id[3])
+    sense = primer_id[5]
+    if pcr == 1:
+        if sense == "F":
+            primer = "Bam-F"
+        else:
+            primer = "R"
+    else:
+        if sense == "F":
+            primer = "F"
+        else:
+            primer = "Bam-R"
+    primer_name = "%s.%d%d_%s%s%d" % (del_name, pcr, design_n, locus_tag,
+                                      primer, primer_n)
+    return primer_name
+
+
 def save_pcr_regions(primer_set, del_name, path):
     """Save defined PCR regions (and total product) to a FASTA file.
 
