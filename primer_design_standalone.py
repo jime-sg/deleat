@@ -20,7 +20,19 @@ sep = "-"*80 + "\n"
 
 
 def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
-    """"""  # TODO
+    """Shift a region until it does not contain BamHI targets or repeats.
+    
+    Check whether a region on a genome contains BamHI targets or any
+    sequence that may be substrate for homologous recombination (repeat
+    equal or longer than L). If it does, shift it (right or left) until
+    it does not.
+    Args:
+        seq (regions.Region): a region on the reference genome.
+        repeats_list (list): list of possible HR substrate locations.
+        L (int): length considered sufficient for HR events.
+        direction (str, [left|right]): direction in which the region
+            should be shifted.
+    """
     seq_ok = False
     bam_ok = False
     repeat_ok = False
@@ -40,7 +52,6 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
                 )
             else:
                 bam_ok = True
-
         # Check seq for repetitive regions
         while not repeat_ok:
             repeat_ok = True
@@ -60,7 +71,6 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
                         % (repeat[0], repeat[1], seq.s(), seq.e())
                     )
                     break
-
         if bam_ok and repeat_ok:
             seq_ok = True
 
@@ -95,7 +105,6 @@ if __name__ == "__main__":
         help=("locus tag of first deleted gene (optional, for primer naming "
               "purposes only)"))
     args = parser.parse_args()
-
     GENOME = args.GENOME
     LOG_DIR = args.LOG_DIR
     DEL_COORDS = (args.DEL_START, args.DEL_END)

@@ -49,7 +49,7 @@ class Primer:
         
         Parse results dictionary returned by primer3 in order to extract
         all information about a primer, and save it to instance
-        attributes: inits Primer with id, start, end, sequence, temp,
+        attributes. Inits Primer with id, start, end, sequence, temp,
         penalty, gc_perc, self_any_th, self_end_th, hairpin_th and
         end_stability.
         Args:
@@ -320,10 +320,11 @@ def get_name(del_name, primer_id, design_n, locus_tag, primer_n):
 
 
 def save_pcr_regions(primer_set, del_name, path):
-    """Save defined PCR regions (and total product) to a FASTA file.
+    """Save defined PCR regions and total product to a FASTA file.
 
     Args:
         primer_set (primers.PrimerSet): chosen primers.
+        del_name (str): name of genomic deletion.
         path (str): output file path.
     """
     with open("%s/%s_PCR_regions.fna" % (path, del_name), "w") as f:
