@@ -28,7 +28,7 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
     it does not.
     Args:
         seq (regions.Region): a region on the reference genome.
-        repeats_list (list): list of possible HR substrate locations.
+        repeats_list (set): list of possible HR substrate locations.
         L (int): length considered sufficient for HR events.
         direction (str, [left|right]): direction in which the region
             should be shifted.

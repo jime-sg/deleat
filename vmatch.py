@@ -41,7 +41,11 @@ def parse_results(results_file):
     with open(results_file, "r") as f:
         for line in f:
             if not line.startswith("#"):
-                repeat_s = int(line.split()[2])-1
-                repeat_e = repeat_s + int(line.split()[0])
-                repeats_list.append((repeat_s, repeat_e))
-    return repeats_list
+                length = int(line.split()[0])
+                repeat_s1 = int(line.split()[2]) + 1
+                repeat_e1 = repeat_s1 + length - 1
+                repeats_list.append((repeat_s1, repeat_e1))
+                repeat_s2 = int(line.split()[6]) + 1
+                repeat_e2 = repeat_s2 + length - 1
+                repeats_list.append((repeat_s2, repeat_e2))
+    return set(repeats_list)
