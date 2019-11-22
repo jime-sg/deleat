@@ -20,7 +20,7 @@ sep = "-"*80 + "\n"
 
 
 def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
-    """Shift a region until it does not contain BamHI targets or repeats.
+    """Ensure that a region does not contain BamHI targets or repeats.
     
     Check whether a region on a genome contains BamHI targets or any
     sequence that may be substrate for homologous recombination (repeat
@@ -111,8 +111,20 @@ if __name__ == "__main__":
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
     LOCUS_TAG = args.LOCUS_TAG
-    genome = SeqIO.read(GENOME, "fasta")
-    log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
+
+    # Check input
+    try:
+        genome = SeqIO.read(GENOME, "fasta")
+    except (FileNotFoundError, ValueError):
+        raise SystemExit("\n\terror: could not read genome file\n")
+    try:
+        log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
+    except FileNotFoundError:
+        raise SystemExit("\n\terror: could not find output directory\n")
+    if (not all([coord in range(1, len(genome)+1) for coord in DEL_COORDS])
+            or DEL_COORDS[0] >= DEL_COORDS[1]):
+        log.close()
+        raise SystemExit("\n\terror: invalid deletion coordinates\n")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)

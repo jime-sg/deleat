@@ -1,4 +1,3 @@
-- Poner argparser a primer_design_standalone.py
 - Poner regiones de primers en mayúsculas en PCR1/2.fna
 - Robustez:
  -> Limitar nº de llamadas a displace_past() (no quedarse sin región delecionada!)
