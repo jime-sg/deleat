@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """primer_design_standalone.py
-# TODO
+
+    Design primers for a large genomic deletion by megapriming.
+
 @author: Jimena Solana
 """
 
@@ -19,7 +21,7 @@ INTERNAL_MARGIN = 200
 sep = "-"*80 + "\n"
 
 
-def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
+def check_BamHItargets_and_repeats(seq, repeats, L, direction):
     """Ensure that a region does not contain BamHI targets or repeats.
     
     Check whether a region on a genome contains BamHI targets or any
@@ -28,10 +30,10 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
     it does not.
     Args:
         seq (regions.Region): a region on the reference genome.
-        repeats_list (set): list of possible HR substrate locations.
+        repeats (set): possible HR substrate locations.
         L (int): length considered sufficient for HR events.
-        direction (str, [left|right]): direction in which the region
-            should be shifted.
+        direction (str): direction in which the region should be
+            shifted ([left|right]).
     """
     seq_ok = False
     bam_ok = False
@@ -55,7 +57,7 @@ def check_BamHItargets_and_repeats(seq, repeats_list, L, direction):
         # Check seq for repetitive regions
         while not repeat_ok:
             repeat_ok = True
-            for repeat in repeats_list:
+            for repeat in repeats:
                 if seq.overlap(repeat) > L:
                     if direction == "right":
                         offset = repeat[1] - seq.s()

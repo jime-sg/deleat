@@ -9,7 +9,19 @@ from os import path, makedirs
 
 
 def run(genome_file, repeat_length, out_path):
-    """"""  # TODO
+    """Compute list of all exact repeats of length >= repeat_length in a
+    genome, using Vmatch.
+
+    First indexes the genome sequence by calling mkvtree (if it is not
+    indexed yet). Then calls vmatch to find all exact repeats of length
+    >= repeat_length, both in the same and reverse complement strand.
+    Args:
+        genome_file (str): genome sequence file in FASTA format.
+        repeat_length (int): min size of repeats to be found.
+        out_path (str): output file path.
+    Returns:
+        repeats_list (set of tuple(int, int)): found repeat locations.
+    """
     index_files = (
         "index.al1", "index.bwt", "index.lcp", "index.ois", "index.sds",
         "index.sti1", "index.tis", "index.bck", "index.des", "index.llv",
@@ -23,7 +35,7 @@ def run(genome_file, repeat_length, out_path):
             ["mkvtree", "-db", genome_file, "-dna",
              "-indexname", "%s/vmatch/index" % out_path, "-pl", "-allout"]
         )
-    # Vmatch: find repeats of length >= repeat_length
+    # Vmatch: find repeats
     with open("%s/vmatch/repeats.txt" % out_path, "w") as f:
         subprocess.call(
             ["vmatch", "-l", str(repeat_length), "-d", "-p",
@@ -36,7 +48,13 @@ def run(genome_file, repeat_length, out_path):
 
 
 def parse_results(results_file):
-    """"""  # TODO
+    """Parse Vmatch output file into a set of repeat coordinates.
+
+    Args:
+        results_file (str): Vmatch output file path.
+    Returns:
+        results (set of tuple(int, int)): found repeat locations.
+    """
     repeats_list = []
     with open(results_file, "r") as f:
         for line in f:
@@ -48,4 +66,5 @@ def parse_results(results_file):
                 repeat_s2 = int(line.split()[6]) + 1
                 repeat_e2 = repeat_s2 + length - 1
                 repeats_list.append((repeat_s2, repeat_e2))
-    return set(repeats_list)
+    results = set(repeats_list)
+    return results
