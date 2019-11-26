@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """primer_design_standalone.py
 
-    Design primers for a large genomic deletion by megapriming.
+    Design primers for large genome deletions by megapriming.
 
 @author: Jimena Solana
 """
@@ -193,8 +193,8 @@ if __name__ == "__main__":
         log.write("%s: %s\n" % (syst_name, primer))
 
     # Define PCR regions
-    pcr1 = megapriming.PCR_dict["PCR1"]
-    pcr2 = megapriming.PCR_dict["PCR2"]
+    pcr1 = megapriming.PCR1_region
+    pcr2 = megapriming.PCR2_region
     log.write("\nDetermined PCR regions for megapriming:\n")
     log.write(
         "\tPCR1 (left):  %d - %d (%d bp)\n"
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         % (pcr1.s(), pcr1.e(), pcr1.e()-pcr1.s(),
            pcr2.s(), pcr2.e(), pcr2.e()-pcr2.s())
     )
-    primers.save_pcr_regions(megapriming, DEL_NAME, LOG_DIR)
+    megapriming.save_pcr_regions(DEL_NAME, LOG_DIR)
     log.write(
         "\nPCR region sequences saved at %s/%s_PCR_regions.fna.\n"
         % (LOG_DIR, DEL_NAME)
