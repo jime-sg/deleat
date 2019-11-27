@@ -80,7 +80,7 @@ def check_BamHItargets_and_repeats(seq, repeats, L, direction):
 if __name__ == "__main__":
     # Parse command-line arguments and init constants
     parser = ArgumentParser(
-        description="Design primers for a large genomic deletion by megapriming."
+        description="Design primers for large genome deletions by megapriming."
     )
     parser.add_argument(
         "-g", dest="GENOME", required=True,
@@ -186,7 +186,10 @@ if __name__ == "__main__":
     log.write(sep)
     log.write("\nSelected pairs of primers:\n")
     for name, primer in megapriming.primers_raw_dict.items():
-        log.write("%s: %s\n" % (name, primer.seq()))
+        log.write(
+            "%s: %s (%d-%d)\n"
+            % (name, primer.seq(), primer.s(), primer.e())
+        )
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
         syst_name = primers.get_name(DEL_NAME, name, 1, LOCUS_TAG, 1)  # FIXME
@@ -206,6 +209,10 @@ if __name__ == "__main__":
     log.write(
         "\nPCR region sequences saved at %s/%s_PCR_regions.fna.\n"
         % (LOG_DIR, DEL_NAME)
+    )
+    log.write(
+        "\nFinal size of deletion '%s': %.1f kb\n"
+        % (DEL_NAME, (pcr2.s()-pcr1.e())/1000)
     )
 
     log.write(sep)
