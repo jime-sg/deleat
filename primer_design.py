@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""primer_design_standalone.py
+"""primer_design.py
 
     Design primers for large genome deletions by megapriming.
 
