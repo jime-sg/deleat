@@ -10,7 +10,7 @@ import primer3
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Restriction import BamHI
+from Bio.Restriction import AllEnzymes
 
 from regions import Region
 
@@ -320,17 +320,20 @@ def write_pairs(primer_dict):
     return results_str
 
 
-def choose(primer_dict, global_seq):
+def choose(primer_dict, global_seq, enz):
     """Choose the best set of four primers for megapriming design.
 
     Check possible primer combinations, in order of primer pair quality,
     until one defines two PCR regions which do not differ in size more
-    than PCR_REGIONS_MAX_SIZEDIFF, and which do not create a BamHI
-    target site when joined together by sewing reaction.
+    than PCR_REGIONS_MAX_SIZEDIFF, and which do not create a restriction
+    enzyme target site when joined together by sewing reaction.
     Args:
         primer_dict (dict of int:dict): all designed primers for one
             region.
         global_seq (Bio.Seq.Seq): template (genome) sequence.
+        enz (Bio.Restriction.Restriction.RestrictionType): restriction
+            enzyme used in the experiment, which must not have any
+            target on the megapriming product.
     Returns:
         primer_set (primers.PrimerSet): the set of four chosen primers.
     """
@@ -340,8 +343,8 @@ def choose(primer_dict, global_seq):
     combinations.sort(key=lambda x: x[0]+x[1])
     i = 0
     sizediff_ok = False
-    bam_ok = False
-    while not sizediff_ok and not bam_ok:
+    cut_ok = False
+    while not sizediff_ok and not cut_ok:
         chosen_primers = {
             "1F": primer_dict[1]["LEFT_%d" % combinations[i][0]],
             "1R": primer_dict[1]["RIGHT_%d" % combinations[i][0]],
@@ -355,15 +358,15 @@ def choose(primer_dict, global_seq):
 
         if size_diff > PCR_REGIONS_MAX_SIZEDIFF:
             i += 1
-            bam_ok = False
+            cut_ok = False
             continue
         else:
             sizediff_ok = True
-        if BamHI.search(mp_product):
+        if enz.search(mp_product):
             i += 1
             sizediff_ok = False
         else:
-            bam_ok = True
+            cut_ok = True
 
     with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
         f.write(str(size_diff) + "\n")

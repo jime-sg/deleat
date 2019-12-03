@@ -9,7 +9,7 @@
 from argparse import ArgumentParser
 
 from Bio import SeqIO
-from Bio.Restriction import BamHI
+from Bio.Restriction import AllEnzymes
 
 from regions import Region
 import vmatch
@@ -21,39 +21,43 @@ INTERNAL_MARGIN = 200
 sep = "-"*80 + "\n"
 
 
-def check_BamHItargets_and_repeats(seq, repeats, L, direction):
-    """Ensure that a region does not contain BamHI targets or repeats.
+def check_cuts_and_repeats(seq, enz, repeats, L, direction):
+    """Ensure that a region does not contain restriction enzyme targets
+    or repeats.
     
-    Check whether a region on a genome contains BamHI targets or any
+    Check whether a region on a genome contains enzyme targets or any
     sequence that may be substrate for homologous recombination (repeat
     equal or longer than L). If it does, shift it (right or left) until
     it does not.
     Args:
         seq (regions.Region): a region on the reference genome.
+        enz (Bio.Restriction.Restriction.RestrictionType): restriction
+            enzyme used in the experiment, which must not have any
+            target on the megapriming product.
         repeats (set): possible HR substrate locations.
         L (int): length considered sufficient for HR events.
         direction (str): direction in which the region should be
             shifted ([left|right]).
     """
     seq_ok = False
-    bam_ok = False
+    cut_ok = False
     repeat_ok = False
     while not seq_ok:
-        # Check seq for BamHI target sites
-        while not bam_ok:
-            pos = BamHI.search(seq.subseq())
+        # Check seq for restriction enzyme target sites
+        while not cut_ok:
+            pos = enz.search(seq.subseq())
             if pos:
                 offset = pos[0]
                 seq.shift_past(offset, direction)
                 repeat_ok = False
                 globalpos = seq.s() + offset
                 log.write(
-                    "!! BamHI target site found at %d. "
+                    "!! %s target site found at %d. "
                     "Location reset to %d - %d.\n"
-                    % (globalpos, seq.s(), seq.e())
+                    % (ENZYME, globalpos, seq.s(), seq.e())
                 )
             else:
-                bam_ok = True
+                cut_ok = True
         # Check seq for repetitive regions
         while not repeat_ok:
             repeat_ok = True
@@ -66,14 +70,14 @@ def check_BamHItargets_and_repeats(seq, repeats, L, direction):
                         offset = repeat[0] - seq.s()
                         seq.shift_past(offset, direction)
                     repeat_ok = False
-                    bam_ok = False
+                    cut_ok = False
                     log.write(
                         "!! Repeated sequence found at (%d-%d). "
                         "Location reset to %d - %d.\n"
                         % (repeat[0], repeat[1], seq.s(), seq.e())
                     )
                     break
-        if bam_ok and repeat_ok:
+        if cut_ok and repeat_ok:
             seq_ok = True
 
 
@@ -98,8 +102,12 @@ if __name__ == "__main__":
         "-d2", dest="DEL_END", required=True, type=int,
         help="end position of desired deletion")
     parser.add_argument(
+        "-e", dest="ENZYME", required=True,
+        help="restriction enzyme used in the experiment (must not have any "
+            "target on the megapriming product")
+    parser.add_argument(
         "-L", dest="HR_LENGTH", metavar="HR_LENGTH", type=int, default=20,
-        choices=range(15, 100),
+        choices=range(15, 101),
         help=("min substrate length required for homologous recombination "
               "events (optional, default %(default)s bp)"))
     parser.add_argument(
@@ -113,6 +121,7 @@ if __name__ == "__main__":
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
     LOCUS_TAG = args.LOCUS_TAG
+    ENZYME = args.ENZYME
 
     # Check input
     try:
@@ -127,6 +136,10 @@ if __name__ == "__main__":
             or DEL_COORDS[0] >= DEL_COORDS[1]):
         log.close()
         raise SystemExit("\n\terror: invalid deletion coordinates\n")
+    if ENZYME in AllEnzymes:
+        enzyme = AllEnzymes.get(ENZYME)
+    else:
+        raise SystemExit("\n\terror: restriction enzyme not found\t")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)
@@ -154,13 +167,11 @@ if __name__ == "__main__":
         % (margin1.s(), margin1.e(), margin2.s(), margin2.e())
     )
     log.write("\nChecking margin 1...\n")
-    check_BamHItargets_and_repeats(margin1,
-                                   repeats_list, L=HR_LENGTH,
-                                   direction="right")
+    check_cuts_and_repeats(margin1, enzyme, repeats_list, L=HR_LENGTH,
+                           direction="right")
     log.write("\nChecking margin 2...\n")
-    check_BamHItargets_and_repeats(margin2,
-                                   repeats_list, L=HR_LENGTH,
-                                   direction="left")
+    check_cuts_and_repeats(margin2, enzyme, repeats_list, L=HR_LENGTH,
+                           direction="left")
     log.write("\nDone.")
     log.write(
         "\nFinal locations:\n\tMargin 1 (left):  %d - %d\n\t"
@@ -181,7 +192,7 @@ if __name__ == "__main__":
 
     # Choose primer pairs
     log.write("\nChoosing primers...")
-    megapriming = primers.choose(all_primers, genome)
+    megapriming = primers.choose(all_primers, genome, enzyme)
     log.write("\nDone.\n")
     log.write(sep)
     log.write("\nSelected pairs of primers:\n")

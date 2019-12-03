@@ -12,8 +12,8 @@ def run(genome_file, repeat_length, out_path):
     """Compute list of all exact repeats of length >= repeat_length in a
     genome, using Vmatch.
 
-    First indexes the genome sequence by calling mkvtree (if it is not
-    indexed yet). Then calls vmatch to find all exact repeats of length
+    First index the genome sequence by calling mkvtree (if it is not
+    indexed yet). Then call vmatch to find all exact repeats of length
     >= repeat_length, both in the same and reverse complement strand.
     Args:
         genome_file (str): genome sequence file in FASTA format.
