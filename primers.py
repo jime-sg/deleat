@@ -373,21 +373,17 @@ def choose(primer_dict, global_seq, enz):
     return primer_set
 
 
-def get_name(del_name, primer_id, design_n, locus_tag, primer_n):
+def get_name(del_name, primer_id, design_n, primer_n):
     """Name a primer using a systematic nomenclature.
     
     Args:
         del_name (str): identifier of desired large genome deletion.
         primer_id (str): the primer's identifier (PCR[1|2][F|R]t).
         design_n (int): index of megapriming design.
-        locus_tag (str or None): locus tag of first gene in desired
-            deleted region.
         primer_n (int): index of primer design.
     Returns:
         primer_name (str): the primer's systematic name.
     """
-    if locus_tag:
-        locus_tag = int(''.join(c for c in locus_tag if c.isdigit()))
     pcr = int(primer_id[3])
     sense = primer_id[5]
     if pcr == 1:
@@ -400,7 +396,6 @@ def get_name(del_name, primer_id, design_n, locus_tag, primer_n):
             primer = "F"
         else:
             primer = "Bam-R"
-    primer_name = "%s.%d%d_%s%s%d" % (del_name, pcr, design_n, locus_tag,
-                                      primer, primer_n)
+    primer_name = "%s.%d%d_%s%d" % (del_name, pcr, design_n, primer, primer_n)
     return primer_name
 
