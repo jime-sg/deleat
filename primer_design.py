@@ -198,7 +198,7 @@ if __name__ == "__main__":
         )
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
-        syst_name = primers.get_name(DEL_NAME, name, 1, 1)  # FIXME
+        syst_name = primers.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
         log.write("%s: %s\n" % (syst_name, primer))
 
     # Define PCR regions

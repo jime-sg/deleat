@@ -10,7 +10,6 @@ import primer3
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Restriction import AllEnzymes
 
 from regions import Region
 
@@ -121,7 +120,7 @@ class PrimerSet:
             primers PCR2F and PCR2R.
     """
 
-    def __init__(self, primer_dict, global_seq):
+    def __init__(self, primer_dict, global_seq, enz):
         """Define set of four primers, add tails and delimit PCR regions.
 
         Inits PrimerSet with PCR1F, PCR1R, PCR2F, PCR2R,
@@ -131,6 +130,7 @@ class PrimerSet:
              primer_dict (dict of str:primers.Primer): dictionary of 1F,
                 1R, 2F and 2R primers.
              global_seq (Bio.Seq.Seq): template sequence.
+             enz  # TODO
         """
         self.PCR1F = primer_dict["1F"]
         self.PCR1R = primer_dict["1R"]
@@ -142,7 +142,7 @@ class PrimerSet:
             "PCR2_F": self.PCR2F,
             "PCR2_R": self.PCR2R
         }
-        self.primers_tailed_dict = self.add_tails()
+        self.primers_tailed_dict = self.add_tails(enz)
         self.PCR1Ft = self.primers_tailed_dict["PCR1_Ft"]
         self.PCR1Rt = self.primers_tailed_dict["PCR1_Rt"]
         self.PCR2Ft = self.primers_tailed_dict["PCR2_Ft"]
@@ -151,23 +151,27 @@ class PrimerSet:
         self.PCR1_region = self.PCR_dict["PCR1"]
         self.PCR2_region = self.PCR_dict["PCR2"]
 
-    def add_tails(self):
+    def add_tails(self, enz):
         """Add tails necessary for megapriming to corresponding primers.
 
-        - PCR1_Bam-F: add BamHI target site at 5'
+        - PCR1_F: add restriction enzyme target site at 5'
         - PCR1_R: unchanged
         - PCR2_F: add reverse complement of PCR1_R at 5'
-        - PCR2_Bam-R: add BamHI target site at 5'
+        - PCR2_R: add restriction enzyme target site at 5'
+        Args:
+            enz (Bio.Restriction.Restriction.RestrictionType):
+                restriction enzyme used in the experiment, which must
+                have target sites on PCR1F and PCR2R primers' tails.  # FIXME
         Returns:
              primers_tailed_dict (dict of str:Bio.Seq.Seq): dictionary
                 of tailed primers.
         """
         primers_tailed_dict = {
-            "PCR1_Ft": Seq("gcacggatcc") + self.PCR1F.seq(),
+            "PCR1_Ft": Seq(enz.site).lower() + self.PCR1F.seq(),
             "PCR1_Rt": self.PCR1R.seq(),
             "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
                        + self.PCR2F.seq(),
-            "PCR2_Rt": Seq("gcacggatcc") + self.PCR2R.seq()
+            "PCR2_Rt": Seq(enz.site).lower() + self.PCR2R.seq()
         }
         return primers_tailed_dict
 
@@ -351,7 +355,7 @@ def choose(primer_dict, global_seq, enz):
             "2F": primer_dict[2]["LEFT_%d" % combinations[i][1]],
             "2R": primer_dict[2]["RIGHT_%d" % combinations[i][1]]
         }
-        primer_set = PrimerSet(chosen_primers, global_seq)
+        primer_set = PrimerSet(chosen_primers, global_seq, enz)
         mp_product = primer_set.get_product()
         size_diff = abs(len(primer_set.PCR1_region)
                         - len(primer_set.PCR2_region))
@@ -373,7 +377,7 @@ def choose(primer_dict, global_seq, enz):
     return primer_set
 
 
-def get_name(del_name, primer_id, design_n, primer_n):
+def get_name(del_name, primer_id, design_n, primer_n, enz):
     """Name a primer using a systematic nomenclature.
     
     Args:
@@ -381,6 +385,8 @@ def get_name(del_name, primer_id, design_n, primer_n):
         primer_id (str): the primer's identifier (PCR[1|2][F|R]t).
         design_n (int): index of megapriming design.
         primer_n (int): index of primer design.
+        enz (Bio.Restriction.Restriction.RestrictionType): restriction
+            enzyme used in the experiment.
     Returns:
         primer_name (str): the primer's systematic name.
     """
@@ -388,14 +394,14 @@ def get_name(del_name, primer_id, design_n, primer_n):
     sense = primer_id[5]
     if pcr == 1:
         if sense == "F":
-            primer = "Bam-F"
+            primer = "%s-F" % str(enz)
         else:
             primer = "R"
     else:
         if sense == "F":
             primer = "F"
         else:
-            primer = "Bam-R"
+            primer = "%s-R" % str(enz)
     primer_name = "%s.%d%d_%s%d" % (del_name, pcr, design_n, primer, primer_n)
     return primer_name
 
