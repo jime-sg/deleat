@@ -123,7 +123,7 @@ class PrimerSet:
     def __init__(self, primer_dict, global_seq, enz):
         """Define set of four primers, add tails and delimit PCR regions.
 
-        Inits PrimerSet with PCR1F, PCR1R, PCR2F, PCR2R,
+        Inits PrimerSet with enz, PCR1F, PCR1R, PCR2F, PCR2R,
         primers_raw_dict, primers_tailed_dict, PCR1Ft, PCR1Rt, PCR2Ft,
         PCR2Rt, PCR_dict, PCR1_region and PCR2_region.
         Args:
@@ -132,6 +132,7 @@ class PrimerSet:
              global_seq (Bio.Seq.Seq): template sequence.
              enz  # TODO
         """
+        self.enz = enz
         self.PCR1F = primer_dict["1F"]
         self.PCR1R = primer_dict["1R"]
         self.PCR2F = primer_dict["2F"]
@@ -142,7 +143,7 @@ class PrimerSet:
             "PCR2_F": self.PCR2F,
             "PCR2_R": self.PCR2R
         }
-        self.primers_tailed_dict = self.add_tails(enz)
+        self.primers_tailed_dict = self.add_tails()
         self.PCR1Ft = self.primers_tailed_dict["PCR1_Ft"]
         self.PCR1Rt = self.primers_tailed_dict["PCR1_Rt"]
         self.PCR2Ft = self.primers_tailed_dict["PCR2_Ft"]
@@ -151,27 +152,23 @@ class PrimerSet:
         self.PCR1_region = self.PCR_dict["PCR1"]
         self.PCR2_region = self.PCR_dict["PCR2"]
 
-    def add_tails(self, enz):
+    def add_tails(self):
         """Add tails necessary for megapriming to corresponding primers.
 
         - PCR1_F: add restriction enzyme target site at 5'
         - PCR1_R: unchanged
         - PCR2_F: add reverse complement of PCR1_R at 5'
         - PCR2_R: add restriction enzyme target site at 5'
-        Args:
-            enz (Bio.Restriction.Restriction.RestrictionType):
-                restriction enzyme used in the experiment, which must
-                have target sites on PCR1F and PCR2R primers' tails.  # FIXME
         Returns:
              primers_tailed_dict (dict of str:Bio.Seq.Seq): dictionary
                 of tailed primers.
         """
         primers_tailed_dict = {
-            "PCR1_Ft": Seq(enz.site).lower() + self.PCR1F.seq(),
+            "PCR1_Ft": Seq(self.enz.site).lower() + self.PCR1F.seq(),
             "PCR1_Rt": self.PCR1R.seq(),
             "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
                        + self.PCR2F.seq(),
-            "PCR2_Rt": Seq(enz.site).lower() + self.PCR2R.seq()
+            "PCR2_Rt": Seq(self.enz.site).lower() + self.PCR2R.seq()
         }
         return primers_tailed_dict
 
@@ -200,7 +197,10 @@ class PrimerSet:
         Returns:
             pcr_product (Bio.Seq.Seq): megapriming product sequence.
         """
-        pcr_product = self.PCR1_region.subseq() + self.PCR2_region.subseq()
+        pcr_product = (Seq(self.enz.site).lower()
+                       + self.PCR1_region.subseq()
+                       + self.PCR2_region.subseq()
+                       + Seq(self.enz.site).reverse_complement().lower())
         return pcr_product
 
     def save_pcr_regions(self, del_name, path):
@@ -366,7 +366,7 @@ def choose(primer_dict, global_seq, enz):
             continue
         else:
             sizediff_ok = True
-        if enz.search(mp_product):
+        if len(enz.search(mp_product)) > 2:  # Enzyme must cut on both ends only
             i += 1
             sizediff_ok = False
         else:

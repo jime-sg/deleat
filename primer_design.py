@@ -33,7 +33,7 @@ def check_cuts_and_repeats(seq, enz, repeats, L, direction):
         seq (regions.Region): a region on the reference genome.
         enz (Bio.Restriction.Restriction.RestrictionType): restriction
             enzyme used in the experiment, which must not have any
-            target on the megapriming product.
+            target inside the megapriming product.
         repeats (set): possible HR substrate locations.
         L (int): length considered sufficient for HR events.
         direction (str): direction in which the region should be
@@ -103,8 +103,8 @@ if __name__ == "__main__":
         help="end position of desired deletion")
     parser.add_argument(
         "-e", dest="ENZYME", required=True,
-        help="restriction enzyme used in the experiment (must not have any "
-            "target on the megapriming product)")
+        help="restriction enzyme used in the experiment (must cut the "
+             "megapriming product in both ends only)")
     parser.add_argument(
         "-L", dest="HR_LENGTH", metavar="HR_LENGTH", type=int, default=20,
         choices=range(15, 101),
@@ -123,18 +123,17 @@ if __name__ == "__main__":
         genome = SeqIO.read(GENOME, "fasta")
     except (FileNotFoundError, ValueError):
         raise SystemExit("\n\terror: could not read genome file\n")
-    try:
-        log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
-    except FileNotFoundError:
-        raise SystemExit("\n\terror: could not find output directory\n")
     if (not all([coord in range(1, len(genome)+1) for coord in DEL_COORDS])
             or DEL_COORDS[0] >= DEL_COORDS[1]):
-        log.close()
         raise SystemExit("\n\terror: invalid deletion coordinates\n")
     if ENZYME in AllEnzymes:
         enzyme = AllEnzymes.get(ENZYME)
     else:
         raise SystemExit("\n\terror: restriction enzyme not found\t")
+    try:
+        log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
+    except FileNotFoundError:
+        raise SystemExit("\n\terror: could not find output directory\n")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)
