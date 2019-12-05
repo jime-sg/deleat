@@ -306,7 +306,7 @@ def write_pairs(primer_dict):
     Returns:
         results_str (str): same results, parsed and readable.
     """
-    results_str = ("N\tsize\tF_start-F_end..R_start-R_end\tseq_F\tseq_R\t"
+    results_str = ("N\tsize\tF_start-F_end..R_end-R_start\tseq_F\tseq_R\t"
                    "TM_F (ºC)\tTM_R (ºC)\n")
     n_pairs = len(primer_dict)//2
     for n in range(n_pairs):
