@@ -155,20 +155,24 @@ class PrimerSet:
     def add_tails(self):
         """Add tails necessary for megapriming to corresponding primers.
 
-        - PCR1_F: add restriction enzyme target site at 5'
+        - PCR1_F: add restriction enzyme target site at 5' (+ sitting
+            sequence)
         - PCR1_R: unchanged
         - PCR2_F: add reverse complement of PCR1_R at 5'
-        - PCR2_R: add restriction enzyme target site at 5'
+        - PCR2_R: add restriction enzyme target site at 5' (+ sitting
+            sequence)
         Returns:
              primers_tailed_dict (dict of str:Bio.Seq.Seq): dictionary
                 of tailed primers.
         """
         primers_tailed_dict = {
-            "PCR1_Ft": Seq(self.enz.site).lower() + self.PCR1F.seq(),
+            "PCR1_Ft": Seq("nnnnnn") + Seq(self.enz.site).lower() +
+                       self.PCR1F.seq(),
             "PCR1_Rt": self.PCR1R.seq(),
-            "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower()
-                       + self.PCR2F.seq(),
-            "PCR2_Rt": Seq(self.enz.site).lower() + self.PCR2R.seq()
+            "PCR2_Ft": self.PCR1R.seq().reverse_complement().lower() +
+                       self.PCR2F.seq(),
+            "PCR2_Rt": Seq("nnnnnn") + Seq(self.enz.site).lower() +
+                       self.PCR2R.seq()
         }
         return primers_tailed_dict
 
@@ -192,15 +196,21 @@ class PrimerSet:
         return pcr_dict
 
     def get_product(self):
-        """Get final megapriming product after sewing reaction (PCR1+PCR2).
+        """Get final megapriming product after sewing reaction.
 
+        The total product is made up of the enzyme target site tail
+        (including sitting sequence), PCR1, PCR2, and reverse complement
+        of enzyme target site (plus reverse complement of sitting
+        sequence).
         Returns:
             pcr_product (Bio.Seq.Seq): megapriming product sequence.
         """
-        pcr_product = (Seq(self.enz.site).lower()
-                       + self.PCR1_region.subseq()
-                       + self.PCR2_region.subseq()
-                       + Seq(self.enz.site).reverse_complement().lower())
+        pcr_product = (Seq("nnnnnn") +
+                       Seq(self.enz.site).lower() +
+                       self.PCR1_region.subseq() +
+                       self.PCR2_region.subseq() +
+                       Seq(self.enz.site).reverse_complement().lower() +
+                       Seq("nnnnnn"))
         return pcr_product
 
     def save_pcr_regions(self, del_name, path):
