@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "-g", dest="GENOME", required=True,
         help="file containing genome sequence in FASTA format")
     parser.add_argument(
-        "-l", dest="LOG_DIR", required=True,
+        "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
     parser.add_argument(
         "-n", dest="DEL_NAME", required=True,
@@ -112,7 +112,7 @@ if __name__ == "__main__":
               "events (optional, default %(default)s bp)"))
     args = parser.parse_args()
     GENOME = args.GENOME
-    LOG_DIR = args.LOG_DIR
+    OUT_DIR = args.OUT_DIR
     DEL_COORDS = (args.DEL_START, args.DEL_END)
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     else:
         raise SystemExit("\n\terror: restriction enzyme not found\t")
     try:
-        log = open("%s/%s_primer_design.txt" % (LOG_DIR, DEL_NAME), "w")
+        log = open("%s/%s_primer_design.txt" % (OUT_DIR, DEL_NAME), "w")
     except FileNotFoundError:
         raise SystemExit("\n\terror: could not find output directory\n")
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     # Calculate list of all repeats of length >= HR_LENGTH
     # (possible substrates for homologous recombination)
-    repeats_list = vmatch.run(GENOME, HR_LENGTH, LOG_DIR)
+    repeats_list = vmatch.run(GENOME, HR_LENGTH, OUT_DIR)
 
     # Check margin region quality
     log.write(sep + "Checking margins...\n")
@@ -215,10 +215,10 @@ if __name__ == "__main__":
         % (pcr1.s(), pcr1.e(), pcr1.e()-pcr1.s(),
            pcr2.s(), pcr2.e(), pcr2.e()-pcr2.s())
     )
-    megapriming.save_pcr_regions(DEL_NAME, LOG_DIR)
+    megapriming.save_pcr_regions(DEL_NAME, OUT_DIR)
     log.write(
         "\nPCR region sequences saved at %s/%s_PCR_regions.fna.\n"
-        % (LOG_DIR, DEL_NAME)
+        % (OUT_DIR, DEL_NAME)
     )
     log.write(
         "\nFinal size of deletion '%s': %.1f kb\n"
