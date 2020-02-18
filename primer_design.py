@@ -112,7 +112,7 @@ if __name__ == "__main__":
               "events (optional, default %(default)s bp)"))
     args = parser.parse_args()
     GENOME = args.GENOME
-    OUT_DIR = args.OUT_DIR
+    OUT_DIR = args.OUT_DIR.rstrip("/")
     DEL_COORDS = (args.DEL_START, args.DEL_END)
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
