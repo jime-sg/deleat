@@ -34,9 +34,9 @@ if __name__ == "__main__":
     all_annot = pd.read_table(
         ANNOTATION, sep="\t", skiprows=1, index_col="deg_id",
         names=(
-            "deg_org", "deg_id", "gene_name", "gene_ref", "cog", "class",
-            "function", "organism", "refseq", "condition", "locus_tag",
-            "go", "x"
+            "deg_org", "deg_id", "gene_name", "gene_ref", "cog",
+            "class", "function", "organism", "refseq", "condition",
+            "locus_tag", "go", "x"
         )
     )
     annot = all_annot.loc[all_annot["deg_org"].isin(organisms.keys())]
