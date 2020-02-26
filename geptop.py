@@ -4,7 +4,7 @@
 """
 
 from collections import Counter
-from itertools import product
+from math import sqrt
 
 from Bio import SeqIO
 from more_itertools import windowed
@@ -13,7 +13,8 @@ from more_itertools import windowed
 CV_K = 6
 
 def run(cds_file, cutoff, n_proc, out_path):
-    seqs = SeqIO.parse(open(cds_file), "fasta")
+    pass
+    # seqs = SeqIO.parse(open(cds_file), "fasta")
 
 
 def word2num(word):
@@ -32,9 +33,9 @@ def num2word(num):
 
 
 def composition_vector(species_fasta, K):
-    freqs_k = Counter()
-    freqs_km1 = Counter()
-    freqs_km2 = Counter()
+    freqs_k = Counter()  # K-words
+    freqs_km1 = Counter()  # (K-1)-words
+    freqs_km2 = Counter()  # (K-2)-words
     total_words = 0
 
     for protein in SeqIO.parse(species_fasta, "fasta"):
@@ -75,6 +76,18 @@ def composition_vector(species_fasta, K):
             cv[kword_n] = ((probs_k[kword_n] - probs_0[kword_n])
                            / probs_0[kword_n])
     return cv
+
+def distance(cv1, cv2):
+    a = sum(
+        {kword: cv1[kword] * cv2[kword]
+         for kword in cv1.keys() & cv2.keys()}.values()
+    )
+    b = sum(map(lambda x: x*x, cv1.values()))
+    c = sum(map(lambda x: x*x, cv2.values()))
+
+    corr = a / sqrt(b * c)
+    dist = (1-corr)/2
+    return dist
 
 
 if __name__ == "__main__":
