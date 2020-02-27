@@ -5,8 +5,10 @@
 
 from collections import Counter
 from math import sqrt
+from time import time  # FIXME
 
 from Bio import SeqIO
+# from Bio.Blast.Applications import NcbiblastxCommandline
 from more_itertools import windowed
 
 
@@ -77,6 +79,7 @@ def composition_vector(species_fasta, K):
                            / probs_0[kword_n])
     return cv
 
+
 def distance(cv1, cv2):
     a = sum(
         {kword: cv1[kword] * cv2[kword]
@@ -86,13 +89,122 @@ def distance(cv1, cv2):
     c = sum(map(lambda x: x*x, cv2.values()))
 
     corr = a / sqrt(b * c)
-    dist = (1-corr)/2
+    dist = (1 - corr) / 2
     return dist
 
 
+"""
+def StrToNum(string):
+    aa_dict = {'A':0,  'C':1,  'D':2,  'E':3,  'F':4,  'G':5,
+               'H':6,  'I':7,  'K':8,  'L':9,  'M':10, 'N':11,
+               'P':12, 'Q':13, 'R':14, 'S':15, 'T':16, 'V':17,
+               'W':18, 'Y':19,
+               'B':2,  'U':1,  'X':5,  'Z':3,  'J':7}
+    number = 0
+    for i in range(len(string)):
+        if string[i] not in aa_dict:
+            return -1
+        bit = aa_dict[string[i]]
+        power = len(string)-i-1
+        number += bit*(20**power)
+    return number
+
+
+def CompositionVector(species):
+    kstring = 6
+    k = {}
+    k0 = {}
+    k1 = {}
+    k2 = {}
+    try:
+        for seqrecord in SeqIO.parse(species, "fasta"):
+            seq = str(seqrecord.seq)
+            len0 = len(seq) - kstring + 3
+            for s in range(len0):
+                start = s
+                end = kstring + s - 2
+                num = StrToNum(seq[start:end])
+                if num not in k2:
+                    k2[num] = 1
+                else:
+                    k2[num] += 1
+                if s < len0 - 2:
+                    num = StrToNum(seq[start:end+2])
+                    if num not in k0:
+                        k0[num] = 1
+                    else:
+                        k0[num] += 1
+                if s < len0 - 1:
+                    num = StrToNum(seq[start:end+1])
+                    if num not in k1:
+                        k1[num] = 1
+                    else:
+                        k1[num] += 1
+            if -1 in k0:
+                del k0[-1]
+            if -1 in k1:
+                del k1[-1]
+            if -1 in k2:
+                del k2[-1]
+
+            string0 = sum(k0.values())
+            string1 = sum(k1.values())
+            string2 = sum(k2.values())
+
+        for n1 in k1:
+            for aa in range(20):
+                n0 = n1 * 20 + aa
+                n2 = n1 % (20**(kstring-2)) * 20 + aa
+                if n2 in k1:
+                    if n0 in k0:
+                        n3 = n1 % (20**(kstring-2))
+                        p0 = 1.0 * k1[n1] * k1[n2] * string0 * string2/k2[n3]/string1/string1
+                        k[n0] = (k0[n0]-p0)/p0
+                    else:
+                        k[n0] =- 1
+        return k
+
+    except (Exception, IOError):
+        print ('Compute CV failed to: %s'%IOError)
+
+
+def Distance(CV1, CV2):
+    O = 0
+    P = 0
+    Q = 0
+
+    for value in CV1:
+        if value in CV2:
+            O += CV1[value]*CV2[value]
+            P += CV1[value]*CV1[value]
+            Q += CV2[value]*CV2[value]
+        else:
+            P += CV1[value]*CV1[value]
+
+    for value in CV2:
+        if value not in CV1:
+            Q += CV2[value]*CV2[value]
+
+    return (1-O/sqrt(P*Q))/2
+"""
+
+
 if __name__ == "__main__":
-    pass
-    #comp_vector = composition_vector("/home/jimena/Bartonella/CDSa/all.faa", 6)
-    #for x, y in comp_vector.items():
-        #print(x, y)
-    #print(len(comp_vector))
+    t0 = time()
+    comp_vector1 = composition_vector("/home/jimena/Escritorio/bq1.faa", 6)
+    comp_vector2 = composition_vector("/home/jimena/Escritorio/bq2.faa", 6)
+    t1 = time()
+    d = distance(comp_vector1, comp_vector2)
+    t2 = time()
+    print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
+
+    # t0 = time()
+    # comp_vector1 = CompositionVector("/home/jimena/Escritorio/bq1.faa")
+    # comp_vector2 = CompositionVector("/home/jimena/Escritorio/bq2.faa")
+    # t1 = time()
+    # d = Distance(comp_vector1, comp_vector2)
+    # t2 = time()
+    # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
+    # for x, y in comp_vector.items():
+        # print(x, y)
+    # print(len(comp_vector))

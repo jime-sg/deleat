@@ -20,7 +20,7 @@ def make_header(sequence, annotation):
 if __name__ == "__main__":
     DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
     ANNOTATION = DEG_DIR + "degannotation-p.dat"
-    FASTA = DEG_DIR + "degseq-p.dat"
+    FASTA = DEG_DIR + "degaa-p.dat"
     ORGANISMS = DEG_DIR + "organisms.txt"
     OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/"
     makedirs(OUT_DIR, exist_ok=True)
