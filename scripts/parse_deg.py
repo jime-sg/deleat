@@ -3,7 +3,7 @@
 @author: Jimena Solana
 """
 
-from os import makedirs
+import os
 
 import pandas as pd
 from Bio import SeqIO
@@ -21,9 +21,9 @@ if __name__ == "__main__":
     DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
     ANNOTATION = DEG_DIR + "degannotation-p.dat"
     FASTA = DEG_DIR + "degaa-p.dat"
-    ORGANISMS = DEG_DIR + "organisms.txt"
-    OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/"
-    makedirs(OUT_DIR, exist_ok=True)
+    ORGANISMS = "/home/jimena/Bartonella/DEGdb/organisms.txt"
+    OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/essential"
+    os.makedirs(OUT_DIR, exist_ok=True)
 
     with open(ORGANISMS) as f:
         organisms = {
@@ -32,7 +32,8 @@ if __name__ == "__main__":
         }
 
     all_annot = pd.read_table(
-        ANNOTATION, sep="\t", skiprows=1, index_col="deg_id",
+        ANNOTATION,
+        sep="\t", skiprows=1, low_memory=False, index_col="deg_id",
         names=(
             "deg_org", "deg_id", "gene_name", "gene_ref", "cog",
             "class", "function", "organism", "refseq", "condition",
@@ -53,5 +54,6 @@ if __name__ == "__main__":
 
     for organism in organisms:
         SeqIO.write(
-            organisms[organism], OUT_DIR + organism + ".faa", "fasta"
+            organisms[organism],
+            os.path.join(OUT_DIR, organism + ".faa"), "fasta"
         )
