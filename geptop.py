@@ -6,6 +6,8 @@
 from collections import Counter
 from math import sqrt
 from time import time  # FIXME
+import json
+import os
 
 from Bio import SeqIO
 # from Bio.Blast.Applications import NcbiblastxCommandline
@@ -13,6 +15,8 @@ from more_itertools import windowed
 
 
 CV_K = 6
+REFSEQS_CV_DIR = "/home/jimena/Bartonella/DEGdb/cv"
+
 
 def run(cds_file, cutoff, n_proc, out_path):
     pass
@@ -34,19 +38,19 @@ def num2word(num):
     return tuple(word)
 
 
-def composition_vector(species_fasta, K):
+def composition_vector(species_fasta):
     freqs_k = Counter()  # K-words
     freqs_km1 = Counter()  # (K-1)-words
     freqs_km2 = Counter()  # (K-2)-words
     total_words = 0
 
     for protein in SeqIO.parse(species_fasta, "fasta"):
-        total_words += len(protein) - K + 1
+        total_words += len(protein) - CV_K + 1
         protein_n = tuple(
             ord(c)-64 for c in protein.seq.upper()
             if ord(c)-64 in range(1, 27)
         )
-        for kword in windowed(protein_n, K):
+        for kword in windowed(protein_n, CV_K):
             kword_n = word2num(kword)
             km1word_n = word2num(kword[:-1])
             km2word_n = word2num(kword[:-2])
@@ -54,9 +58,9 @@ def composition_vector(species_fasta, K):
             freqs_km1[km1word_n] += 1
             freqs_km2[km2word_n] += 1
         # last words of length K-1 and K-2
-        freqs_km1[word2num(protein_n[-K+1:])] += 1
-        freqs_km2[word2num(protein_n[-K+1:-1])] += 1
-        freqs_km2[word2num(protein_n[-K+2:])] += 1
+        freqs_km1[word2num(protein_n[-CV_K+1:])] += 1
+        freqs_km2[word2num(protein_n[-CV_K+1:-1])] += 1
+        freqs_km2[word2num(protein_n[-CV_K+2:])] += 1
 
     probs_k = {w: f/total_words for w, f in freqs_k.items()}
     probs_km1 = {w: f/total_words for w, f in freqs_km1.items()}
@@ -91,6 +95,28 @@ def distance(cv1, cv2):
     corr = a / sqrt(b * c)
     dist = (1 - corr) / 2
     return dist
+
+
+def get_distance(query_org, ref_org):
+    # query_org = FASTA path
+    # ref_org = DEG id
+    query_cv = composition_vector(query_org)
+    with open(os.path.join(REFSEQS_CV_DIR, ref_org + ".json")) as f:
+        ref_cv = {int(a): b for a, b in json.load(f).items()}
+
+    dist = distance(query_cv, ref_cv)
+    return dist
+
+
+def get_all_distances(query_org, ref_dir):
+    reference_cvs = os.listdir(ref_dir)
+    for genome in reference_cvs:
+        id_ = os.path.splitext(genome)[0]
+        print(id_)
+        t0 = time()
+        d = get_distance(query_org, id_)
+        t1 = time()
+        print(d, "%.2f s" % (t1 - t0))
 
 
 """
@@ -190,17 +216,25 @@ def Distance(CV1, CV2):
 
 
 if __name__ == "__main__":
-    t0 = time()
-    comp_vector1 = composition_vector("/home/jimena/Escritorio/bq1.faa", 6)
-    comp_vector2 = composition_vector("/home/jimena/Escritorio/bq2.faa", 6)
-    t1 = time()
-    d = distance(comp_vector1, comp_vector2)
-    t2 = time()
-    print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
+    pass
 
     # t0 = time()
-    # comp_vector1 = CompositionVector("/home/jimena/Escritorio/bq1.faa")
-    # comp_vector2 = CompositionVector("/home/jimena/Escritorio/bq2.faa")
+    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
+    #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
+    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
+    #     comp_vector2 = {int(a): b for a, b in json.load(fi).items()}
+    # comp_vector1 = composition_vector("/home/jimena/Bartonella/DEGdb/deg_byorg/all/DEG1019.faa", 6)
+    # comp_vector2 = composition_vector("/home/jimena/Bartonella/CDSa/all.faa", 6)
+    # t1 = time()
+    # d = distance(comp_vector1, comp_vector2)
+    # t2 = time()
+    # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
+
+    # t0 = time()
+    # # with open(os.path.join(REFSEQS_CV_DIR, "DEG1020.json"), "r") as fi:
+    # #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
+    # comp_vector1 = CompositionVector("/home/jimena/Bartonella/DEGdb/deg_byorg/all/DEG1019.faa")
+    # comp_vector2 = CompositionVector("/home/jimena/Bartonella/CDSa/all.faa")
     # t1 = time()
     # d = Distance(comp_vector1, comp_vector2)
     # t2 = time()
