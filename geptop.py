@@ -10,32 +10,19 @@ import json
 import os
 
 from Bio import SeqIO
-# from Bio.Blast.Applications import NcbiblastxCommandline
+from Bio.Blast.Applications import NcbiblastpCommandline
+from Bio.Blast import NCBIXML
 from more_itertools import windowed
 
 
 CV_K = 6
 REFSEQS_CV_DIR = "/home/jimena/Bartonella/DEGdb/cv"
+REFSEQS_FAA_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
 
 
-def run(cds_file, cutoff, n_proc, out_path):
-    pass
-    # seqs = SeqIO.parse(open(cds_file), "fasta")
-
-
-def word2num(word):
-    num = 0
-    for i, n in enumerate(word):
-        num += n * (26**i)
-    return num
-
-
-def num2word(num):
-    word = []
-    while num:
-        word.append(num % 26)
-        num = num // 26
-    return tuple(word)
+# def run(cds_file, cutoff, n_proc, out_path):
+#     pass
+#     seqs = SeqIO.parse(open(cds_file), "fasta")
 
 
 def composition_vector(species_fasta):
@@ -84,17 +71,19 @@ def composition_vector(species_fasta):
     return cv
 
 
-def distance(cv1, cv2):
-    a = sum(
-        {kword: cv1[kword] * cv2[kword]
-         for kword in cv1.keys() & cv2.keys()}.values()
-    )
-    b = sum(map(lambda x: x*x, cv1.values()))
-    c = sum(map(lambda x: x*x, cv2.values()))
+def word2num(word):
+    num = 0
+    for i, n in enumerate(word):
+        num += n * (26**i)
+    return num
 
-    corr = a / sqrt(b * c)
-    dist = (1 - corr) / 2
-    return dist
+
+def num2word(num):
+    word = []
+    while num:
+        word.append(num % 26)
+        num = num // 26
+    return tuple(word)
 
 
 def get_distance(query_org, ref_org):
@@ -108,7 +97,20 @@ def get_distance(query_org, ref_org):
     return dist
 
 
-def get_all_distances(query_org, ref_dir):
+def distance(cv1, cv2):
+    a = sum(
+        {kword: cv1[kword] * cv2[kword]
+         for kword in cv1.keys() & cv2.keys()}.values()
+    )
+    b = sum(map(lambda x: x*x, cv1.values()))
+    c = sum(map(lambda x: x*x, cv2.values()))
+
+    corr = a / sqrt(b * c)
+    dist = (1 - corr) / 2
+    return dist
+
+
+def get_all_distances(query_org, ref_dir):  # FIXME
     reference_cvs = os.listdir(ref_dir)
     for genome in reference_cvs:
         id_ = os.path.splitext(genome)[0]
@@ -117,6 +119,43 @@ def get_all_distances(query_org, ref_dir):
         d = get_distance(query_org, id_)
         t1 = time()
         print(d, "%.2f s" % (t1 - t0))
+
+
+def blast(query, subject, xml_dir):
+    q_vs_s = NcbiblastpCommandline(
+        query=query, db=subject,
+        evalue=1, outfmt=5,
+        out=os.path.join(xml_dir, "%s_qs.xml" % subject)
+    )
+    out, err = q_vs_s()
+
+    s_vs_q = NcbiblastpCommandline(
+        query=subject, db=query,
+        evalue=1, outfmt=5,
+        out=os.path.join(xml_dir, "%s_sq.xml" % subject)
+    )
+    out, err = s_vs_q()
+
+
+def rbh(qs_xml, sq_xml):
+    orthologs = []
+
+    with open(qs_xml) as qs:
+        records_qs = list(NCBIXML.parse(qs))
+    with open(sq_xml) as sq:
+        records_sq = list(NCBIXML.parse(sq))
+
+    for record_qs in records_qs:
+        q = record_qs.query  # query title
+        s = record_qs.alignments[0].hit_def  # best hit title
+        pair1 = (q, s)
+        for record_sq in records_sq:
+            s = record_sq.query
+            q = record_sq.alignments[0].hit_def
+            pair2 = (q, s)
+            if pair1 == pair2:
+                orthologs.append(pair1)
+    return orthologs
 
 
 """
