@@ -10,11 +10,18 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 
-def make_header(sequence, annotation):
+def make_id(sequence, annotation):
+    gi = annotation.loc[sequence.id, "gene_ref"]
+    deg = sequence.id
+    id_ = "gi|%s|deg|%s|" % (gi, deg)
+    return id_
+
+
+def make_description(sequence, annotation):
     gene_name = annotation.loc[sequence.id, "gene_name"]
     function = annotation.loc[sequence.id, "function"]
-    header = "%s (%s)" % (function, gene_name)
-    return header
+    description = "%s (%s)" % (function, gene_name)
+    return description
 
 
 if __name__ == "__main__":
@@ -47,8 +54,9 @@ if __name__ == "__main__":
         org = seq_.id[:7]
         if org in organisms.keys():
             new_seq = SeqRecord(
-                seq=seq_.seq, id=seq_.id,
-                description=make_header(seq_, annot)
+                seq=seq_.seq,
+                id=make_id(seq_, annot),
+                description=make_description(seq_, annot)
             )
             organisms[org].append(new_seq)
 
