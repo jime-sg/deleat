@@ -24,22 +24,18 @@ def make_description(sequence, annotation):
     return description
 
 
-if __name__ == "__main__":
-    DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
-    ANNOTATION = DEG_DIR + "degannotation-p.dat"
-    FASTA = DEG_DIR + "degaa-p.dat"
-    ORGANISMS = "/home/jimena/Bartonella/DEGdb/organisms.txt"
-    OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/essential"
-    os.makedirs(OUT_DIR, exist_ok=True)
-
-    with open(ORGANISMS) as f:
-        organisms = {
+def parse(annotation, fasta, organisms, prefix, out_dir):
+    with open(organisms) as f:
+        orgs = {
             org.strip().split("\t")[0]: []
             for org in f if not org.startswith("#")
         }
 
+    if prefix == "DNEG":
+        orgs = {k.replace("DEG", "DNEG"): v for k, v in orgs.items()}
+
     all_annot = pd.read_table(
-        ANNOTATION,
+        annotation,
         sep="\t", skiprows=1, low_memory=False, index_col="deg_id",
         names=(
             "deg_org", "deg_id", "gene_name", "gene_ref", "cog",
@@ -47,21 +43,63 @@ if __name__ == "__main__":
             "locus_tag", "go", "x"
         )
     )
-    annot = all_annot.loc[all_annot["deg_org"].isin(organisms.keys())]
+    annot = all_annot.loc[all_annot["deg_org"].isin(orgs.keys())]
 
-    deg_seqs = SeqIO.parse(FASTA, "fasta")
+    deg_seqs = SeqIO.parse(fasta, "fasta")
     for seq_ in deg_seqs:
-        org = seq_.id[:7]
-        if org in organisms.keys():
+        if prefix == "DEG":
+            org = seq_.id[:7]
+        elif prefix == "DNEG":
+            org = seq_.id[:8]
+        if org in orgs.keys():
             new_seq = SeqRecord(
                 seq=seq_.seq,
                 id=make_id(seq_, annot),
                 description=make_description(seq_, annot)
             )
-            organisms[org].append(new_seq)
+            orgs[org].append(new_seq)
 
-    for organism in organisms:
+    for org in orgs:
         SeqIO.write(
-            organisms[organism],
-            os.path.join(OUT_DIR, organism + ".faa"), "fasta"
+            orgs[org],
+            os.path.join(out_dir, org + ".faa"), "fasta"
         )
+
+
+if __name__ == "__main__":
+    DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
+    DNEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-np-15.2/"
+    DEG_ANNOTATION = DEG_DIR + "degannotation-p.dat"
+    DNEG_ANNOTATION = DNEG_DIR + "degannotation-np.dat"
+    DEG_FASTA = DEG_DIR + "degaa-p.dat"
+    DNEG_FASTA = DNEG_DIR + "degaa-np.dat"
+    ORGANISMS = "/home/jimena/Bartonella/DEGdb/organisms.txt"
+    OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg"
+    os.makedirs(os.path.join(OUT_DIR, "essential"), exist_ok=True)
+    os.makedirs(os.path.join(OUT_DIR, "nonessential"), exist_ok=True)
+    os.makedirs(os.path.join(OUT_DIR, "all"), exist_ok=True)
+
+    parse(
+        DEG_ANNOTATION, DEG_FASTA, ORGANISMS, "DEG",
+        os.path.join(OUT_DIR, "essential")
+    )
+
+    parse(
+        DNEG_ANNOTATION, DNEG_FASTA, ORGANISMS, "DNEG",
+        os.path.join(OUT_DIR, "nonessential")
+    )
+
+    all_orgs = os.listdir(os.path.join(OUT_DIR, "essential"))
+    for file in all_orgs:
+        with open(os.path.join(OUT_DIR, "all", file), "w") as f_all:
+            for record in SeqIO.parse(
+                    os.path.join(OUT_DIR, "essential", file), "fasta"
+            ):
+                SeqIO.write(record, f_all, "fasta")
+
+            file = file.replace("DEG", "DNEG")
+            for record in SeqIO.parse(
+                    os.path.join(OUT_DIR, "nonessential", file), "fasta"
+            ):
+                SeqIO.write(record, f_all, "fasta")
+
