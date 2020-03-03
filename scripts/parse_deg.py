@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from Bio.Blast.Applications import NcbimakeblastdbCommandline
 
 
 def make_id(sequence, annotation):
@@ -66,6 +67,25 @@ def parse(annotation, fasta, organisms, prefix, out_dir):
         )
 
 
+def merge():
+    orgs = os.listdir(os.path.join(OUT_DIR, "essential"))
+    with open(os.path.join(OUT_DIR, "all", "deg.faa"), "w") as db:
+        for org in orgs:
+            with open(os.path.join(OUT_DIR, "all", org), "w") as f_all:
+                for record in SeqIO.parse(
+                        os.path.join(OUT_DIR, "essential", org), "fasta"
+                ):
+                    SeqIO.write(record, f_all, "fasta")
+                    SeqIO.write(record, db, "fasta")
+
+                org = org.replace("DEG", "DNEG")
+                for record in SeqIO.parse(
+                        os.path.join(OUT_DIR, "nonessential", org), "fasta"
+                ):
+                    SeqIO.write(record, f_all, "fasta")
+                    SeqIO.write(record, db, "fasta")
+
+
 if __name__ == "__main__":
     DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
     DNEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-np-15.2/"
@@ -79,27 +99,25 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(OUT_DIR, "nonessential"), exist_ok=True)
     os.makedirs(os.path.join(OUT_DIR, "all"), exist_ok=True)
 
+    # essential
     parse(
         DEG_ANNOTATION, DEG_FASTA, ORGANISMS, "DEG",
         os.path.join(OUT_DIR, "essential")
     )
 
+    # nonessential
     parse(
         DNEG_ANNOTATION, DNEG_FASTA, ORGANISMS, "DNEG",
         os.path.join(OUT_DIR, "nonessential")
     )
 
-    all_orgs = os.listdir(os.path.join(OUT_DIR, "essential"))
-    for file in all_orgs:
-        with open(os.path.join(OUT_DIR, "all", file), "w") as f_all:
-            for record in SeqIO.parse(
-                    os.path.join(OUT_DIR, "essential", file), "fasta"
-            ):
-                SeqIO.write(record, f_all, "fasta")
+    # all
+    merge()
 
-            file = file.replace("DEG", "DNEG")
-            for record in SeqIO.parse(
-                    os.path.join(OUT_DIR, "nonessential", file), "fasta"
-            ):
-                SeqIO.write(record, f_all, "fasta")
+    # make blast db
+    makeblastdb = NcbimakeblastdbCommandline(
+        dbtype="prot",
+        input_file=os.path.join(OUT_DIR, "all", "deg.faa")
+    )
+    out, err = makeblastdb()
 
