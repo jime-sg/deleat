@@ -69,21 +69,28 @@ def parse(annotation, fasta, organisms, prefix, out_dir):
 
 def merge():
     orgs = os.listdir(os.path.join(OUT_DIR, "essential"))
-    with open(os.path.join(OUT_DIR, "all", "deg.faa"), "w") as db:
-        for org in orgs:
-            with open(os.path.join(OUT_DIR, "all", org), "w") as f_all:
-                for record in SeqIO.parse(
-                        os.path.join(OUT_DIR, "essential", org), "fasta"
-                ):
-                    SeqIO.write(record, f_all, "fasta")
-                    SeqIO.write(record, db, "fasta")
+    for org in orgs:
+        with open(os.path.join(OUT_DIR, "all", org), "w") as f_all:
+            for record in SeqIO.parse(
+                    os.path.join(OUT_DIR, "essential", org), "fasta"
+            ):
+                SeqIO.write(record, f_all, "fasta")
 
-                org = org.replace("DEG", "DNEG")
-                for record in SeqIO.parse(
-                        os.path.join(OUT_DIR, "nonessential", org), "fasta"
-                ):
-                    SeqIO.write(record, f_all, "fasta")
-                    SeqIO.write(record, db, "fasta")
+            org = org.replace("DEG", "DNEG")
+            for record in SeqIO.parse(
+                    os.path.join(OUT_DIR, "nonessential", org), "fasta"
+            ):
+                SeqIO.write(record, f_all, "fasta")
+
+
+def makeblastdbs():
+    orgs = os.listdir(os.path.join(OUT_DIR, "all"))
+    for org in orgs:
+        makeblastdb = NcbimakeblastdbCommandline(
+            dbtype="prot",
+            input_file=os.path.join(OUT_DIR, "all", org)
+        )
+        out, err = makeblastdb()
 
 
 if __name__ == "__main__":
@@ -104,20 +111,13 @@ if __name__ == "__main__":
         DEG_ANNOTATION, DEG_FASTA, ORGANISMS, "DEG",
         os.path.join(OUT_DIR, "essential")
     )
-
     # nonessential
     parse(
         DNEG_ANNOTATION, DNEG_FASTA, ORGANISMS, "DNEG",
         os.path.join(OUT_DIR, "nonessential")
     )
-
     # all
     merge()
-
     # make blast db
-    makeblastdb = NcbimakeblastdbCommandline(
-        dbtype="prot",
-        input_file=os.path.join(OUT_DIR, "all", "deg.faa")
-    )
-    out, err = makeblastdb()
+    makeblastdbs()
 
