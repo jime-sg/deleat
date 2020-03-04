@@ -18,6 +18,8 @@ from more_itertools import windowed
 CV_K = 6
 REFSEQS_CV_DIR = "/home/jimena/Bartonella/DEGdb/cv"
 REFSEQS_FAA_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
+NPROC = 4  # FIXME (heredar)
+BLAST_EVALUE = 1
 
 
 # def run(cds_file, cutoff, n_proc, out_path):
@@ -121,40 +123,46 @@ def get_all_distances(query_org, ref_dir):  # FIXME
         print(d, "%.2f s" % (t1 - t0))
 
 
-def blast(query, subject, xml_dir):
-    q_vs_s = NcbiblastpCommandline(
+def blast_all(query, subject, xml_dir):
+    # query -> ???
+    # subject -> ??? cambiar en db o en out
+    # FIXME
+    forward = NcbiblastpCommandline(
         query=query, db=subject,
-        evalue=1, outfmt=5,
-        out=os.path.join(xml_dir, "%s_qs.xml" % subject)
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=NPROC,
+        out=os.path.join(xml_dir, "%s_f.xml" % subject)
     )
-    out, err = q_vs_s()
+    out, err = forward()
 
-    s_vs_q = NcbiblastpCommandline(
+    reverse = NcbiblastpCommandline(
         query=subject, db=query,
-        evalue=1, outfmt=5,
-        out=os.path.join(xml_dir, "%s_sq.xml" % subject)
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=NPROC,
+        out=os.path.join(xml_dir, "%s_r.xml" % subject)
     )
-    out, err = s_vs_q()
+    out, err = reverse()
 
 
-def rbh(qs_xml, sq_xml):
+def rbh(f_xml, r_xml):
     orthologs = []
 
-    with open(qs_xml) as qs:
-        records_qs = list(NCBIXML.parse(qs))
-    with open(sq_xml) as sq:
-        records_sq = list(NCBIXML.parse(sq))
+    with open(f_xml) as f:
+        records_f = list(NCBIXML.parse(f))
+    with open(r_xml) as r:
+        records_r = list(NCBIXML.parse(r))
 
-    for record_qs in records_qs:
-        q = record_qs.query  # query title
-        s = record_qs.alignments[0].hit_def  # best hit title
-        pair1 = (q, s)
-        for record_sq in records_sq:
-            s = record_sq.query
-            q = record_sq.alignments[0].hit_def
-            pair2 = (q, s)
-            if pair1 == pair2:
-                orthologs.append(pair1)
+    for record_f in records_f:
+        if record_f.alignments:
+            q = record_f.query  # query title
+            s = record_f.alignments[0].hit_def  # best hit title
+            pair_f = (q, s)
+            for record_r in records_r:
+                if record_r.alignments:
+                    s = record_r.query
+                    q = record_r.alignments[0].hit_def
+                    pair_r = (q, s)
+                    if pair_f == pair_r:
+                        orthologs.append(pair_f)
+                        break
     return orthologs
 
 
