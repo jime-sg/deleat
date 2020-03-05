@@ -10,21 +10,66 @@ import json
 import os
 
 from Bio import SeqIO
-from Bio.Blast.Applications import NcbiblastpCommandline
+from Bio.Blast.Applications import (NcbimakeblastdbCommandline,
+                                    NcbiblastpCommandline)
 from Bio.Blast import NCBIXML
 from more_itertools import windowed
 
 
 CV_K = 6
-REFSEQS_CV_DIR = "/home/jimena/Bartonella/DEGdb/cv"
-REFSEQS_FAA_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
-NPROC = 4  # FIXME (heredar)
 BLAST_EVALUE = 1
 
 
-# def run(cds_file, cutoff, n_proc, out_path):
-#     pass
-#     seqs = SeqIO.parse(open(cds_file), "fasta")
+def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
+    blast_path = os.path.join(out_path, "blast_results")
+    os.makedirs(blast_path, exist_ok=True)
+
+    genes = SeqIO.parse(cds_file, "fasta")
+    scores = dict.fromkeys((gene.description for gene in genes), 0)
+    query_cv = composition_vector(cds_file)
+    make_blastdb(cds_file)
+
+    deg_organisms = [os.path.basename(file)
+                     for file in os.listdir(deg_path)]
+    for deg_org in deg_organisms:
+        dist = get_distance(query_cv, deg_org, cv_path)
+        if dist == 0:
+            dist = 0.01
+
+        make_blastdb(os.path.join(deg_path, deg_org + ".faa"))
+        blast_all(
+            cds_file,
+            os.path.join(deg_path, deg_org + ".faa"),
+            blast_path,
+            n_proc
+        )
+        orthologs = rbh(
+            os.path.join(blast_path, deg_org + "_f.xml"),
+            os.path.join(blast_path, deg_org + "_r.xml")
+        )
+        os.remove(os.path.join(blast_path, deg_org + "_f.xml"))
+        os.remove(os.path.join(blast_path, deg_org + "_r.xml"))
+        # remove blastdb
+
+        for pair in orthologs:
+            scores[pair[0]] += is_essential(pair[1])/dist
+
+    os.rmdir(blast_path)
+    # remove blastdb
+
+    scores = normalize(scores, len(deg_organisms))
+    results = {gene: (score, score > cutoff)
+               for gene, score in scores.items()}
+    return results
+
+
+def normalize(raw, n):
+    norm = {}
+    s_max = max(raw.values())
+    s_min = min(raw.values())
+    for gene in raw:
+        norm[gene] = (raw[gene] / n - s_min) / (s_max - s_min)
+    return norm
 
 
 def composition_vector(species_fasta):
@@ -88,11 +133,10 @@ def num2word(num):
     return tuple(word)
 
 
-def get_distance(query_org, ref_org):
+def get_distance(query_cv, ref_org, cv_path):
     # query_org = FASTA path
     # ref_org = DEG id
-    query_cv = composition_vector(query_org)
-    with open(os.path.join(REFSEQS_CV_DIR, ref_org + ".json")) as f:
+    with open(os.path.join(cv_path, ref_org + ".json")) as f:
         ref_cv = {int(a): b for a, b in json.load(f).items()}
 
     dist = distance(query_cv, ref_cv)
@@ -112,31 +156,43 @@ def distance(cv1, cv2):
     return dist
 
 
-def get_all_distances(query_org, ref_dir):  # FIXME
+def get_all_distances(query_org, ref_dir, deg_path):  # FIXME
     reference_cvs = os.listdir(ref_dir)
     for genome in reference_cvs:
         id_ = os.path.splitext(genome)[0]
         print(id_)
         t0 = time()
-        d = get_distance(query_org, id_)
+        d = get_distance(query_org, id_, deg_path)
         t1 = time()
         print(d, "%.2f s" % (t1 - t0))
 
 
-def blast_all(query, subject, xml_dir):
+def make_blastdb(seqs_file):
+    makeblastdb = NcbimakeblastdbCommandline(
+        dbtype="prot",
+        input_file=seqs_file
+    )
+    out, err = makeblastdb()
+
+
+def remove_blastdb():  # TODO
+    pass
+
+
+def blast_all(query, subject, xml_dir, n_proc):
     # query -> ???
     # subject -> ??? cambiar en db o en out
     # FIXME
     forward = NcbiblastpCommandline(
         query=query, db=subject,
-        evalue=BLAST_EVALUE, outfmt=5, num_threads=NPROC,
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
         out=os.path.join(xml_dir, "%s_f.xml" % subject)
     )
     out, err = forward()
 
     reverse = NcbiblastpCommandline(
         query=subject, db=query,
-        evalue=BLAST_EVALUE, outfmt=5, num_threads=NPROC,
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
         out=os.path.join(xml_dir, "%s_r.xml" % subject)
     )
     out, err = reverse()
@@ -164,6 +220,15 @@ def rbh(f_xml, r_xml):
                         orthologs.append(pair_f)
                         break
     return orthologs
+
+
+def is_essential(hit_id):
+    deg_id = hit_id.split("|")[3]
+    if "N" in deg_id:
+        essential = 0
+    else:
+        essential = 1
+    return essential
 
 
 """
