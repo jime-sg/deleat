@@ -8,6 +8,7 @@ from math import sqrt
 from time import time  # FIXME
 import json
 import os
+from glob import glob
 
 from Bio import SeqIO
 from Bio.Blast.Applications import (NcbimakeblastdbCommandline,
@@ -29,47 +30,33 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
     query_cv = composition_vector(cds_file)
     make_blastdb(cds_file)
 
-    deg_organisms = [os.path.basename(file)
+    deg_organisms = [(os.path.splitext(os.path.basename(file))[0], file)
                      for file in os.listdir(deg_path)]
-    for deg_org in deg_organisms:
-        dist = get_distance(query_cv, deg_org, cv_path)
+    for deg_id, deg_file in deg_organisms:
+        make_blastdb(deg_file)
+        blast_all(cds_file, deg_file, blast_path, n_proc)
+        orthologs = rbh(
+            os.path.join(blast_path, deg_id + "_f.xml"),
+            os.path.join(blast_path, deg_id + "_r.xml")
+        )
+        os.remove(os.path.join(blast_path, deg_id + "_f.xml"))
+        os.remove(os.path.join(blast_path, deg_id + "_r.xml"))
+        remove_blastdb(deg_file)
+
+        dist = get_distance(query_cv, deg_id, cv_path)
         if dist == 0:
             dist = 0.01
-
-        make_blastdb(os.path.join(deg_path, deg_org + ".faa"))
-        blast_all(
-            cds_file,
-            os.path.join(deg_path, deg_org + ".faa"),
-            blast_path,
-            n_proc
-        )
-        orthologs = rbh(
-            os.path.join(blast_path, deg_org + "_f.xml"),
-            os.path.join(blast_path, deg_org + "_r.xml")
-        )
-        os.remove(os.path.join(blast_path, deg_org + "_f.xml"))
-        os.remove(os.path.join(blast_path, deg_org + "_r.xml"))
-        # remove blastdb
 
         for pair in orthologs:
             scores[pair[0]] += is_essential(pair[1])/dist
 
     os.rmdir(blast_path)
-    # remove blastdb
+    remove_blastdb(cds_file)
 
     scores = normalize(scores, len(deg_organisms))
     results = {gene: (score, score > cutoff)
                for gene, score in scores.items()}
     return results
-
-
-def normalize(raw, n):
-    norm = {}
-    s_max = max(raw.values())
-    s_min = min(raw.values())
-    for gene in raw:
-        norm[gene] = (raw[gene] / n - s_min) / (s_max - s_min)
-    return norm
 
 
 def composition_vector(species_fasta):
@@ -91,7 +78,7 @@ def composition_vector(species_fasta):
             freqs_k[kword_n] += 1
             freqs_km1[km1word_n] += 1
             freqs_km2[km2word_n] += 1
-        # last words of length K-1 and K-2
+        # last (K-1)- and (K-2)-words
         freqs_km1[word2num(protein_n[-CV_K+1:])] += 1
         freqs_km2[word2num(protein_n[-CV_K+1:-1])] += 1
         freqs_km2[word2num(protein_n[-CV_K+2:])] += 1
@@ -133,6 +120,61 @@ def num2word(num):
     return tuple(word)
 
 
+def make_blastdb(seqs_file):
+    makeblastdb = NcbimakeblastdbCommandline(
+        dbtype="prot",
+        input_file=seqs_file
+    )
+    out, err = makeblastdb()
+
+
+def remove_blastdb(in_file):
+    for db_file in glob(in_file + ".p*"):
+        os.remove(db_file)
+
+
+def blast_all(query, subject, xml_dir, n_proc):
+    subj_id = os.path.splitext(os.path.basename(subject))[0]
+
+    forward = NcbiblastpCommandline(
+        query=query, db=subject,
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
+        out=os.path.join(xml_dir, "%s_f.xml" % subj_id)
+    )
+    out, err = forward()
+
+    reverse = NcbiblastpCommandline(
+        query=subject, db=query,
+        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
+        out=os.path.join(xml_dir, "%s_r.xml" % subj_id)
+    )
+    out, err = reverse()
+
+
+def rbh(f_xml, r_xml):
+    orthologs = []
+
+    with open(f_xml) as f:
+        records_f = list(NCBIXML.parse(f))
+    with open(r_xml) as r:
+        records_r = list(NCBIXML.parse(r))
+
+    for record_f in records_f:
+        if record_f.alignments:
+            q = record_f.query  # query title
+            s = record_f.alignments[0].hit_def  # best hit title
+            pair_f = (q, s)
+            for record_r in records_r:
+                if record_r.alignments:
+                    s = record_r.query
+                    q = record_r.alignments[0].hit_def
+                    pair_r = (q, s)
+                    if pair_f == pair_r:
+                        orthologs.append(pair_f)
+                        break
+    return orthologs
+
+
 def get_distance(query_cv, ref_org, cv_path):
     # query_org = FASTA path
     # ref_org = DEG id
@@ -167,61 +209,6 @@ def get_all_distances(query_org, ref_dir, deg_path):  # FIXME
         print(d, "%.2f s" % (t1 - t0))
 
 
-def make_blastdb(seqs_file):
-    makeblastdb = NcbimakeblastdbCommandline(
-        dbtype="prot",
-        input_file=seqs_file
-    )
-    out, err = makeblastdb()
-
-
-def remove_blastdb():  # TODO
-    pass
-
-
-def blast_all(query, subject, xml_dir, n_proc):
-    # query -> ???
-    # subject -> ??? cambiar en db o en out
-    # FIXME
-    forward = NcbiblastpCommandline(
-        query=query, db=subject,
-        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_dir, "%s_f.xml" % subject)
-    )
-    out, err = forward()
-
-    reverse = NcbiblastpCommandline(
-        query=subject, db=query,
-        evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_dir, "%s_r.xml" % subject)
-    )
-    out, err = reverse()
-
-
-def rbh(f_xml, r_xml):
-    orthologs = []
-
-    with open(f_xml) as f:
-        records_f = list(NCBIXML.parse(f))
-    with open(r_xml) as r:
-        records_r = list(NCBIXML.parse(r))
-
-    for record_f in records_f:
-        if record_f.alignments:
-            q = record_f.query  # query title
-            s = record_f.alignments[0].hit_def  # best hit title
-            pair_f = (q, s)
-            for record_r in records_r:
-                if record_r.alignments:
-                    s = record_r.query
-                    q = record_r.alignments[0].hit_def
-                    pair_r = (q, s)
-                    if pair_f == pair_r:
-                        orthologs.append(pair_f)
-                        break
-    return orthologs
-
-
 def is_essential(hit_id):
     deg_id = hit_id.split("|")[3]
     if "N" in deg_id:
@@ -229,6 +216,15 @@ def is_essential(hit_id):
     else:
         essential = 1
     return essential
+
+
+def normalize(raw, n):
+    norm = {}
+    s_max = max(raw.values())
+    s_min = min(raw.values())
+    for gene in raw:
+        norm[gene] = (raw[gene] / n - s_min) / (s_max - s_min)
+    return norm
 
 
 """
