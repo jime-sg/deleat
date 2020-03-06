@@ -19,20 +19,81 @@ from more_itertools import windowed
 
 CV_K = 6
 BLAST_EVALUE = 1
+ORG_NAMES = {
+    "DEG1001": "Bacillus subtilis 168",
+    "DEG1002": "Staphylococcus aureus N315",
+    "DEG1003": "Vibrio cholerae N16961",
+    "DEG1005": "Haemophilus influenzae Rd KW20",
+    "DEG1006": "Mycoplasma genitalium G37",
+    "DEG1007": "Streptococcus pneumoniae",
+    "DEG1008": "Helicobacter pylori 26695",
+    "DEG1010": "Mycobacterium tuberculosis H37Rv",
+    "DEG1011": "Salmonella typhimurium LT2",
+    "DEG1012": "Francisella novicida U112",
+    "DEG1013": "Acinetobacter baylyi ADP1",
+    "DEG1014": "Mycoplasma pulmonis UAB CTIP",
+    "DEG1015": "Pseudomonas aeruginosa UCBPP-PA14",
+    "DEG1016": "Salmonella enterica serovar Typhi",
+    "DEG1017": "Staphylococcus aureus NCTC 8325",
+    "DEG1018": "Escherichia coli MG1655 I",
+    "DEG1019": "Escherichia coli MG1655 II",
+    "DEG1020": "Caulobacter crescentus",
+    "DEG1021": "Streptococcus sanguinis",
+    "DEG1022": "Porphyromonas gingivalis ATCC 33277",
+    "DEG1023": "Bacteroides thetaiotaomicron VPI-5482",
+    "DEG1024": "Burkholderia thailandensis E264",
+    "DEG1025": "Mycobacterium tuberculosis H37Rv II",
+    "DEG1026": "Salmonella enterica subsp. enterica serovar Typhimurium str. 14028S",
+    "DEG1027": "Mycobacterium tuberculosis H37Rv III",
+    "DEG1028": "Sphingomonas wittichii RW1",
+    "DEG1029": "Shewanella oneidensis MR-1",
+    "DEG1030": "Pseudomonas aeruginosa PAO1",
+    "DEG1031": "Campylobacter jejuni subsp. jejuni NCTC 11168 = ATCC 700819",
+    "DEG1032": "Salmonella enterica serovar Typhimurium SL1344",
+    "DEG1033": "Salmonella enterica serovar Typhi Ty2",
+    "DEG1034": "Bacteroides fragilis 638R",
+    "DEG1035": "Burkholderia pseudomallei K96243",
+    "DEG1036": "Pseudomonas aeruginosa PAO1",
+    "DEG1037": "Streptococcus pyogenes MGAS5448",
+    "DEG1038": "Streptococcus pyogenes NZ131",
+    "DEG1039": "Porphyromonas gingivalis ATCC 33277",
+    "DEG1040": "Synechococcus elongatus PCC 7942",
+    "DEG1041": "Rhodopseudomonas palustris CGA009",
+    "DEG1042": "Streptococcus agalactiae A909",
+    "DEG1043": "Acinetobacter baumannii ATCC 17978",
+    "DEG1044": "Acinetobacter baumannii ATCC 17978",
+    "DEG1045": "Agrobacterium fabrum str. C58",
+    "DEG1046": "Brevundimonas subvibrioides ATCC 15264",
+    "DEG1047": "Bacillus thuringiensis BMB171",
+    "DEG1048": "Escherichia coli ST131 strain EC958",
+    "DEG1049": "Campylobacter jejuni subsp. jejuni NCTC 11168 = ATCC 700819",
+    "DEG1050": "Campylobacter jejuni subsp. jejuni 81-176"
+}
 
 
 def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
     blast_path = os.path.join(out_path, "blast_results")
     os.makedirs(blast_path, exist_ok=True)
 
+    print("Reading reference proteome...")
     genes = SeqIO.parse(cds_file, "fasta")
     scores = dict.fromkeys((gene.description for gene in genes), 0)
     query_cv = composition_vector(cds_file)
     make_blastdb(cds_file)
 
-    deg_organisms = [(os.path.splitext(os.path.basename(file))[0], file)
+    print("Reading DEG database...")
+    deg_organisms = [(os.path.splitext(os.path.basename(file))[0],
+                      os.path.join(deg_path, file))
                      for file in os.listdir(deg_path)]
+
+    print("Finding essential orthologs in:")
     for deg_id, deg_file in deg_organisms:
+        t0 = time()
+        print(
+            "  %s %s" % (deg_id, ORG_NAMES[deg_id]),
+            end=" ", flush=True
+        )
+
         make_blastdb(deg_file)
         blast_all(cds_file, deg_file, blast_path, n_proc)
         orthologs = rbh(
@@ -50,8 +111,12 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
         for pair in orthologs:
             scores[pair[0]] += is_essential(pair[1])/dist
 
+        t1 = time()
+        print("(%.2f s)" % (t1 - t0))
+
     os.rmdir(blast_path)
     remove_blastdb(cds_file)
+    print("Done. Normalizing essentiality scores...")
 
     scores = normalize(scores, len(deg_organisms))
     results = {gene: (score, score > cutoff)
@@ -324,7 +389,15 @@ def Distance(CV1, CV2):
 
 
 if __name__ == "__main__":
-    pass
+    res = run(
+        cds_file="/home/jimena/Bartonella/CDSa/all.faa",
+        deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/all",
+        cv_path="/home/jimena/Bartonella/DEGdb/cv",
+        cutoff=0.24,
+        n_proc=4,
+        out_path="/home/jimena/Escritorio"
+    )
+    print(res)
 
     # t0 = time()
     # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
