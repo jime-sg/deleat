@@ -133,20 +133,20 @@ def remove_blastdb(in_file):
         os.remove(db_file)
 
 
-def blast_all(query, subject, xml_dir, n_proc):
+def blast_all(query, subject, xml_path, n_proc):
     subj_id = os.path.splitext(os.path.basename(subject))[0]
 
     forward = NcbiblastpCommandline(
         query=query, db=subject,
         evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_dir, "%s_f.xml" % subj_id)
+        out=os.path.join(xml_path, "%s_f.xml" % subj_id)
     )
     out, err = forward()
 
     reverse = NcbiblastpCommandline(
         query=subject, db=query,
         evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_dir, "%s_r.xml" % subj_id)
+        out=os.path.join(xml_path, "%s_r.xml" % subj_id)
     )
     out, err = reverse()
 
@@ -198,8 +198,8 @@ def distance(cv1, cv2):
     return dist
 
 
-def get_all_distances(query_org, ref_dir, deg_path):  # FIXME
-    reference_cvs = os.listdir(ref_dir)
+def get_all_distances(query_org, ref_path, deg_path):  # FIXME
+    reference_cvs = os.listdir(ref_path)
     for genome in reference_cvs:
         id_ = os.path.splitext(genome)[0]
         print(id_)
@@ -339,8 +339,8 @@ if __name__ == "__main__":
     # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
 
     # t0 = time()
-    # # with open(os.path.join(REFSEQS_CV_DIR, "DEG1020.json"), "r") as fi:
-    # #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
+    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1020.json"), "r") as fi:
+    #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
     # comp_vector1 = CompositionVector("/home/jimena/Bartonella/DEGdb/deg_byorg/all/DEG1019.faa")
     # comp_vector2 = CompositionVector("/home/jimena/Bartonella/CDSa/all.faa")
     # t1 = time()
@@ -348,5 +348,5 @@ if __name__ == "__main__":
     # t2 = time()
     # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
     # for x, y in comp_vector.items():
-        # print(x, y)
+    #     print(x, y)
     # print(len(comp_vector))
