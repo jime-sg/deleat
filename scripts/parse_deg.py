@@ -8,21 +8,6 @@ import os
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from Bio.Blast.Applications import NcbimakeblastdbCommandline
-
-
-def make_id(sequence, annotation):
-    gi = annotation.loc[sequence.id, "gene_ref"]
-    deg = sequence.id
-    id_ = "gi|%s|deg|%s|" % (gi, deg)
-    return id_
-
-
-def make_description(sequence, annotation):
-    gene_name = annotation.loc[sequence.id, "gene_name"]
-    function = annotation.loc[sequence.id, "function"]
-    description = "%s (%s)" % (function, gene_name)
-    return description
 
 
 def parse(annotation, fasta, organisms, prefix, out_dir):
@@ -37,7 +22,8 @@ def parse(annotation, fasta, organisms, prefix, out_dir):
 
     all_annot = pd.read_table(
         annotation,
-        sep="\t", skiprows=1, low_memory=False, index_col="deg_id",
+        sep="\t", skiprows=1, low_memory=False, na_values="-",
+        index_col="deg_id",
         names=(
             "deg_org", "deg_id", "gene_name", "gene_ref", "cog",
             "class", "function", "organism", "refseq", "condition",
@@ -67,6 +53,25 @@ def parse(annotation, fasta, organisms, prefix, out_dir):
         )
 
 
+def make_id(sequence, annotation):
+    gi = annotation.loc[sequence.id, "gene_ref"]
+    deg = sequence.id
+    id_ = "gi|%s|deg|%s|" % (gi, deg)
+    return id_
+
+
+def make_description(sequence, annotation):
+    function = annotation.loc[sequence.id, "function"]
+    gene_name = annotation.loc[sequence.id, "gene_name"]
+    if pd.notna(function) and pd.notna(gene_name):
+        description = "%s (%s)" % (function, gene_name)
+    elif pd.notna(function):
+        description = function
+    else:
+        description = "no annotation"
+    return description
+
+
 def merge():
     orgs = os.listdir(os.path.join(OUT_DIR, "essential"))
     for org in orgs:
@@ -81,16 +86,6 @@ def merge():
                     os.path.join(OUT_DIR, "nonessential", org), "fasta"
             ):
                 SeqIO.write(record, f_all, "fasta")
-
-
-def makeblastdbs():
-    orgs = os.listdir(os.path.join(OUT_DIR, "all"))
-    for org in orgs:
-        makeblastdb = NcbimakeblastdbCommandline(
-            dbtype="prot",
-            input_file=os.path.join(OUT_DIR, "all", org)
-        )
-        out, err = makeblastdb()
 
 
 if __name__ == "__main__":
@@ -118,6 +113,3 @@ if __name__ == "__main__":
     )
     # all
     merge()
-    # make blast db
-    makeblastdbs()
-
