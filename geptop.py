@@ -118,7 +118,7 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
     remove_blastdb(cds_file)
     print("Done. Normalizing essentiality scores...")
 
-    scores = normalize(scores, len(deg_organisms))
+    scores = normalize(scores)
     results = {gene: (score, score > cutoff)
                for gene, score in scores.items()}
     return results
@@ -283,12 +283,12 @@ def is_essential(hit_id):
     return essential
 
 
-def normalize(raw, n):
+def normalize(raw):
     norm = {}
     s_max = max(raw.values())
     s_min = min(raw.values())
     for gene in raw:
-        norm[gene] = (raw[gene] / n - s_min) / (s_max - s_min)
+        norm[gene] = (raw[gene] - s_min) / (s_max - s_min)
     return norm
 
 
