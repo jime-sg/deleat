@@ -19,6 +19,6 @@ if __name__ == "__main__":
     for genome in reference_genomes:
         id_ = os.path.splitext(genome)[0]
         print(id_)
-        cv = composition_vector(os.path.join(REFSEQS_DIR, genome), CV_K)
+        cv = composition_vector(os.path.join(REFSEQS_DIR, genome))
         with open(os.path.join(OUT_DIR, id_ + ".json"), "w") as fo:
             json.dump(cv, fo)
