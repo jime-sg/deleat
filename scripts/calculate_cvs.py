@@ -6,7 +6,7 @@
 import os
 import json
 
-from ..geptop import composition_vector, CV_K
+from ..geptop import composition_vector
 
 
 if __name__ == "__main__":
