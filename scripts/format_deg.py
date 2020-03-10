@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""parse_deg.py
+"""format_deg.py
 @author: Jimena Solana
 """
 
@@ -10,7 +10,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 
-def parse(annotation, fasta, organisms, prefix, out_dir):
+def format_db(annotation, fasta, organisms, prefix, out_dir):
     with open(organisms) as f:
         orgs = {
             org.strip().split("\t")[0]: []
@@ -102,12 +102,12 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(OUT_DIR, "all"), exist_ok=True)
 
     # essential
-    parse(
+    format_db(
         DEG_ANNOTATION, DEG_FASTA, ORGANISMS, "DEG",
         os.path.join(OUT_DIR, "essential")
     )
     # nonessential
-    parse(
+    format_db(
         DNEG_ANNOTATION, DNEG_FASTA, ORGANISMS, "DNEG",
         os.path.join(OUT_DIR, "nonessential")
     )
