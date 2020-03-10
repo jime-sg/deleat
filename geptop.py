@@ -131,6 +131,8 @@ def composition_vector(species_fasta):
     total_words = 0
 
     for protein in SeqIO.parse(species_fasta, "fasta"):
+        if len(protein.seq) < CV_K:
+            continue
         total_words += len(protein) - CV_K + 1
         protein_n = tuple(
             ord(c)-64 for c in protein.seq.upper()
@@ -397,7 +399,8 @@ if __name__ == "__main__":
         n_proc=4,
         out_path="/home/jimena/Escritorio"
     )
-    print(res)
+    for x, y in res.items():
+        print(str(x) + "\t" + str(y))
 
     # t0 = time()
     # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
