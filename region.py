@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""regions.py
+"""region.py
 # TODO
 @author: Jimena Solana
 """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""primers.py
+"""primer.py
 # TODO
 @author: Jimena Solana
 """
@@ -11,7 +11,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from regions import Region
+from region import Region
 
 
 # Primer3 settings
@@ -114,9 +114,9 @@ class PrimerSet:
             tailed primers.
         PCR_dict (dict of str:regions.Region): dictionary of PCR regions
             defined by the primer set.
-        PCR1_region (regions.Region): PCR1 (left) region defined by
+        PCR1_region (region.Region): PCR1 (left) region defined by
             primers PCR1F and PCR1R.
-        PCR2_region (regions.Region): PCR2 (left) region defined by
+        PCR2_region (region.Region): PCR2 (left) region defined by
             primers PCR2F and PCR2R.
     """
 
@@ -240,7 +240,7 @@ def design(region, crit_pos):
     """Design PCR primers on a template sequence, using Primer3.
     
     Args:
-        region (regions.Region): region spanning coordinates of
+        region (region.Region): region spanning coordinates of
             SEQUENCE_INCLUDED_REGION arg in Primer3 design function. All
             designed primers are constrained to be inside this region.
         crit_pos (tuple(int, str)): if str is "L", reverse primers
@@ -265,7 +265,7 @@ def p3_design(region, crit_pos):
     """API function for Primer3 primer design.
     
     Args:
-        region (regions.Region): region spanning coordinates of
+        region (region.Region): region spanning coordinates of
             SEQUENCE_INCLUDED_REGION arg in Primer3 design function. All
             designed primers are constrained to be inside this region.
         crit_pos (tuple(int, str)): if str is "L", reverse primers

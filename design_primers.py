@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""primer_design.py
+"""design_primers.py
 
     Design primers for large genome deletions by megapriming.
 
@@ -11,9 +11,9 @@ from argparse import ArgumentParser
 from Bio import SeqIO
 from Bio.Restriction import AllEnzymes
 
-from regions import Region
+from region import Region
 import vmatch
-import primers
+import primer
 
 
 MARGIN_SIZE = 1000
@@ -30,7 +30,7 @@ def check_cuts_and_repeats(seq, enz, repeats, L, direction):
     equal or longer than L). If it does, shift it (right or left) until
     it does not.
     Args:
-        seq (regions.Region): a region on the reference genome.
+        seq (region.Region): a region on the reference genome.
         enz (Bio.Restriction.Restriction.RestrictionType): restriction
             enzyme used in the experiment, which must not have any
             target inside the megapriming product.
@@ -84,6 +84,7 @@ def check_cuts_and_repeats(seq, enz, repeats, L, direction):
 if __name__ == "__main__":
     # Parse command-line arguments and init constants
     parser = ArgumentParser(
+        prog="design-primers",
         description="Design primers for large genome deletions by megapriming."
     )
     parser.add_argument(
@@ -176,17 +177,17 @@ if __name__ == "__main__":
     # Design primers
     log.write(sep + "Designing primers...\n")
     all_primers = {
-        1: primers.design(margin1, crit_pos=(del_region.s(), "L")),
-        2: primers.design(margin2, crit_pos=(del_region.e(), "R"))
+        1: primer.design(margin1, crit_pos=(del_region.s(), "L")),
+        2: primer.design(margin2, crit_pos=(del_region.e(), "R"))
     }
     log.write("\nBest primer pairs for margin 1 (left):\n")
-    log.write(primers.write_pairs(all_primers[1]))
+    log.write(primer.write_pairs(all_primers[1]))
     log.write("\nBest primer pairs for margin 2 (right):\n")
-    log.write(primers.write_pairs(all_primers[2]))
+    log.write(primer.write_pairs(all_primers[2]))
 
     # Choose primer pairs
     log.write("\nChoosing primers...")
-    megapriming = primers.choose(all_primers, genome, enzyme)
+    megapriming = primer.choose(all_primers, genome, enzyme)
     log.write("\nDone.\n")
     log.write(sep)
     log.write("\nSelected pairs of primers:\n")
@@ -197,7 +198,7 @@ if __name__ == "__main__":
         )
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
-        syst_name = primers.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
+        syst_name = primer.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
         log.write("%s: %s\n" % (syst_name, primer))
     log.write(
         "\nWarning: leading 'nnnnnn' in PCR1_F and PCR2_R primers should be "
