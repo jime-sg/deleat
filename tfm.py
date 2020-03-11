@@ -1,51 +1,32 @@
 #!/usr/bin/env python3
-"""
+"""tfm.py
 @author: Jimena Solana
 """
 
-from argparse import ArgumentParser
-import runpy
-
-
-if __name__ == "__main__":
-    parser = ArgumentParser(
-        description=""  # FIXME
-    )
-    parser.add_argument(
-        dest="step",
-        help="",  # FIXME
-        choices=(
-            "nonessential-genes",
-            "nonessential-regions",
-            "deletion-coords",
-            "design-primers",
-            "summarize"
-        )
-    )
-    args = parser.parse_args()
-    step = args.step
-
-    if step == "nonessential-genes":
-        runpy.run_module("nonessential_genes")  # FIXME
-    elif step == "nonessential-regions":
-        runpy.run_module("nonessential_regions")  # FIXME
-    elif step == "deletion-coords":
-        runpy.run_module("integrate_scores")  # FIXME
-    elif step == "design-primers":
-        runpy.run_module("primer_design")  # FIXME
-    elif step == "summarize":
-        runpy.run_module("summarize")  # FIXME
-
-
-"""
-a.py:
-#!/usr/bin/env python3
-import runpy
-runpy.run_module("b", run_name="__main__")
-
-b.py:
-#!/usr/bin/env python3
 from sys import argv
+import runpy
+
+
+STEPS = [
+    "nonessential-genes",
+    "nonessential-regions",
+    "define-deletions",
+    "design-primers",
+    "summarize"
+]
+
+
 if __name__ == "__main__":
-    print("lo que me ha llegado es:", argv[1])
-"""
+    step = argv[1]
+    if step not in STEPS:
+        if step not in ("-h", "--help"):
+            print("error: unrecognized option '%s'" % step)
+        print("usage: tfm <step name> <step arguments>")
+        print("valid steps are:")
+        for i, s in enumerate(STEPS):
+            print("\t%d. %s" % (i+1, s))
+        raise SystemExit
+
+    else:
+        runpy.run_module(step.replace("-", "_"), run_name="__main__")
+
