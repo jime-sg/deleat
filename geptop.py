@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+# TODO
 @author: Jimena Solana
 """
 
@@ -71,15 +72,34 @@ ORG_NAMES = {
 }
 
 
-def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
+def run(query_file, deg_path, cv_path, cutoff, n_proc, out_path):
+    """
+    Get essentiality scores and classification for each protein in a
+    file, according to the Geptop algorithm (prediction based on
+    orthology and phylogeny) using the organisms in the Database of
+    Essential Genes as reference.
+    Args:
+        query_file (str): query proteins in FASTA format.
+        deg_path (str): directory containing DEG reference proteomes.
+        cv_path (str): directory containing pre-computed composition
+            vectors for DEG reference proteomes.
+        cutoff (float): cutoff score for essentiality classification.
+        n_proc (int): number of processes for parallelization.  # FIXME
+        out_path (str): output directory.
+    Returns:
+        results (dict of str: (float, bool)): essentiality score and
+            classification (True/False) for each protein.
+    """
     blast_path = os.path.join(out_path, "blast_results")
     os.makedirs(blast_path, exist_ok=True)
 
     print("Reading reference proteome...")
-    genes = SeqIO.parse(cds_file, "fasta")
+    genes = SeqIO.parse(query_file, "fasta")
     scores = dict.fromkeys((gene.description for gene in genes), 0)
-    query_cv = composition_vector(cds_file)
-    make_blastdb(cds_file)
+    make_blastdb(query_file)
+
+    # Calculate query CV
+    query_cv = composition_vector(query_file)
 
     print("Reading DEG database...")
     deg_organisms = [(os.path.splitext(os.path.basename(file))[0],
@@ -94,8 +114,9 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
             end=" ", flush=True
         )
 
+        # Find ortholog pairs
         make_blastdb(deg_file)
-        blast_all(cds_file, deg_file, blast_path, n_proc)
+        blast_all(query_file, deg_file, blast_path, n_proc)
         orthologs = rbh(
             os.path.join(blast_path, deg_id + "_f.xml"),
             os.path.join(blast_path, deg_id + "_r.xml")
@@ -104,10 +125,12 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
         os.remove(os.path.join(blast_path, deg_id + "_r.xml"))
         remove_blastdb(deg_file)
 
+        # Calculate species distance
         dist = get_distance(query_cv, deg_id, cv_path)
         if dist == 0:
             dist = 0.01
 
+        # Get essentality score
         for pair in orthologs:
             scores[pair[0]] += is_essential(pair[1])/dist
 
@@ -115,16 +138,26 @@ def run(cds_file, deg_path, cv_path, cutoff, n_proc, out_path):
         print("(%.2f s)" % (t1 - t0))
 
     os.rmdir(blast_path)
-    remove_blastdb(cds_file)
+    remove_blastdb(query_file)
     print("Done. Normalizing essentiality scores...")
-
     scores = normalize(scores)
+
+    # Classify genes
     results = {gene: (score, score > cutoff)
                for gene, score in scores.items()}
     return results
 
 
 def composition_vector(species_fasta):
+    """
+    Calculate the composition vector of a given proteome, according to
+    the algorithm by Qi et al. 2004 'Whole Proteome Prokaryote Phylogeny
+    Without Sequence Alignment: A K-String Composition Approach'.
+    Args:
+        species_fasta (str): species proteome in FASTA format.
+    Returns:
+        cv (dict of int: float): composition vector.
+    """
     freqs_k = Counter()  # K-words
     freqs_km1 = Counter()  # (K-1)-words
     freqs_km2 = Counter()  # (K-2)-words
@@ -133,11 +166,12 @@ def composition_vector(species_fasta):
     for protein in SeqIO.parse(species_fasta, "fasta"):
         if len(protein.seq) < CV_K:
             continue
-        total_words += len(protein) - CV_K + 1
+        total_words += len(protein) - CV_K + 1  # total possible words
         protein_n = tuple(
             ord(c)-64 for c in protein.seq.upper()
             if ord(c)-64 in range(1, 27)
         )
+        # Count words in the protein
         for kword in windowed(protein_n, CV_K):
             kword_n = word2num(kword)
             km1word_n = word2num(kword[:-1])
@@ -145,15 +179,17 @@ def composition_vector(species_fasta):
             freqs_k[kword_n] += 1
             freqs_km1[km1word_n] += 1
             freqs_km2[km2word_n] += 1
-        # last (K-1)- and (K-2)-words
+        # Last (K-1)- and (K-2)-words
         freqs_km1[word2num(protein_n[-CV_K+1:])] += 1
         freqs_km2[word2num(protein_n[-CV_K+1:-1])] += 1
         freqs_km2[word2num(protein_n[-CV_K+2:])] += 1
 
+    # Calculate relative frequencies
     probs_k = {w: f/total_words for w, f in freqs_k.items()}
     probs_km1 = {w: f/total_words for w, f in freqs_km1.items()}
     probs_km2 = {w: f/total_words for w, f in freqs_km2.items()}
 
+    # Calculate predicted probabilities by Markov model
     probs_0 = dict()
     for kword_n in probs_k:
         # kword_n="ABCDE" -> a="ABCD"; b="BCDE"; c="BCD"
@@ -162,6 +198,7 @@ def composition_vector(species_fasta):
         c = word2num(num2word(kword_n)[1:-1])
         probs_0[kword_n] = probs_km1[a] * probs_km1[b] / probs_km2[c]
 
+    # Subtract random mutation background
     cv = dict()
     for kword_n in probs_k:
         if probs_0[kword_n] == 0:
@@ -173,6 +210,7 @@ def composition_vector(species_fasta):
 
 
 def word2num(word):
+    """Transform a letter string into a number in base 26."""
     num = 0
     for i, n in enumerate(word):
         num += n * (26**i)
@@ -180,6 +218,7 @@ def word2num(word):
 
 
 def num2word(num):
+    """Transform a number in base 26 into a letter string."""
     word = []
     while num:
         word.append(num % 26)
@@ -188,6 +227,10 @@ def num2word(num):
 
 
 def make_blastdb(seqs_file):
+    """Make a BLAST database from a protein FASTA file.
+    Args:
+        seqs_file (str): input protein sequences in FASTA format.
+    """
     makeblastdb = NcbimakeblastdbCommandline(
         dbtype="prot",
         input_file=seqs_file
@@ -196,11 +239,23 @@ def make_blastdb(seqs_file):
 
 
 def remove_blastdb(in_file):
+    """Remove BLAST database files.
+    Args:
+        in_file (str): input file for construction of the database.
+    """
     for db_file in glob(in_file + ".p*"):
         os.remove(db_file)
 
 
 def blast_all(query, subject, xml_path, n_proc):
+    """Perform a reciprocal all-vs-all BLAST search between two
+    proteomes.
+    Args:
+        query (str): filename of first proteome in FASTA format.
+        subject (str): filename of second proteome in FASTA format.
+        xml_path (str): directory for BLAST output in XML format.
+        n_proc (int): number of threads for BLAST search.
+    """
     subj_id = os.path.splitext(os.path.basename(subject))[0]
 
     forward = NcbiblastpCommandline(
@@ -219,6 +274,15 @@ def blast_all(query, subject, xml_path, n_proc):
 
 
 def rbh(f_xml, r_xml):
+    """Parse the output from a reciprocal all-vs-all BLAST search into a
+    list of ortholog pairs.
+    Args:
+        f_xml (str): results of forward BLAST search in XML format.
+        r_xml (str): results of reverse BLAST search in XML format.
+    Returns:
+        orthologs (list of (str, str)): ortholog pairs (as gene
+            descriptions).
+    """
     orthologs = []
 
     with open(f_xml) as f:
@@ -243,8 +307,17 @@ def rbh(f_xml, r_xml):
 
 
 def get_distance(query_cv, ref_org, cv_path):
-    # query_org = FASTA path
-    # ref_org = DEG id
+    """Calculate phylogenetic distance between two proteomes by the CV
+    method.
+    Args:
+        query_cv (dict of int: float): composition vector of query
+            proteome.
+        ref_org (str): DEG id of subject proteome.
+        cv_path (str): directory containing pre-computed composition
+            vectors for DEG reference proteomes.
+    Returns:
+        dist (float): phylogenetic distance.
+    """
     with open(os.path.join(cv_path, ref_org + ".json")) as f:
         ref_cv = {int(a): b for a, b in json.load(f).items()}
 
@@ -253,14 +326,23 @@ def get_distance(query_cv, ref_org, cv_path):
 
 
 def distance(cv1, cv2):
+    """Calculate distance between two composition vectors.
+    Args:
+        cv1 (dict of int: float): first composition vector.
+        cv2 (dict of int: float): second composition vector.
+    Returns:
+        dist (float): distance.
+    """
+    # Calculate correlation between vectors as their cosine similarity
     a = sum(
         {kword: cv1[kword] * cv2[kword]
          for kword in cv1.keys() & cv2.keys()}.values()
     )
     b = sum(map(lambda x: x*x, cv1.values()))
     c = sum(map(lambda x: x*x, cv2.values()))
-
     corr = a / sqrt(b * c)
+
+    # Get distance by normalizing to (0, 1)
     dist = (1 - corr) / 2
     return dist
 
@@ -277,15 +359,22 @@ def get_all_distances(query_org, ref_path, deg_path):  # FIXME
 
 
 def is_essential(hit_id):
+    """Determine whether a DEG hit is essential (1) or not (0)."""
     deg_id = hit_id.split("|")[3]
-    if "N" in deg_id:
+    if "N" in deg_id:  # "DNEG" in id
         essential = 0
-    else:
+    else:  # "DEG" in id
         essential = 1
     return essential
 
 
 def normalize(raw):
+    """Normalize essentiality scores.
+    Args:
+        raw (dict of str: float): raw essentiality scores.
+    Returns:
+        norm (dict of str: float): normalized essentiality scores.
+    """
     norm = {}
     s_max = max(raw.values())
     s_min = min(raw.values())
@@ -392,15 +481,15 @@ def Distance(CV1, CV2):
 
 if __name__ == "__main__":
     res = run(
-        cds_file="/home/jimena/Bartonella/CDSa/all.faa",
+        query_file="/home/jimena/Bartonella/CDSa/all.faa",
         deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/all",
         cv_path="/home/jimena/Bartonella/DEGdb/cv",
         cutoff=0.24,
         n_proc=4,
         out_path="/home/jimena/Escritorio"
     )
-    for x, y in res.items():
-        print(str(x) + "\t" + str(y))
+    for j, k in res.items():
+        print(str(j) + "\t" + str(k))
 
     # t0 = time()
     # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
