@@ -143,7 +143,7 @@ def run(query_file, deg_path, cv_path, cutoff, n_proc, out_path):
     scores = normalize(scores)
 
     # Classify genes
-    results = {gene: (score, score > cutoff)
+    results = {gene.split()[0]: (score, score > cutoff)
                for gene, score in scores.items()}
     return results
 
