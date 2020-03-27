@@ -12,12 +12,13 @@ def run(gb_file):
     annotation = SeqIO.read(gb_file, "genbank")
     genomeseq = annotation.seq
     for gene in annotation.features:
-        if gene.type == "CDS":
+        if gene.type == "CDS" and "translation" in gene.qualifiers:
             seqfeatures = get_features(gene, genomeseq)
             seqfeatures = ";".join(
                 str(k) + "," + str(v) for k, v in seqfeatures.items()
             )
-            gene.qualifiers["seqfeatures"] = seqfeatures
+            gene.qualifiers["seqfeatures"] = [seqfeatures]
+        # TODO elif -> otros tipos de genes
     return annotation
 
 
