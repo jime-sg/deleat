@@ -16,7 +16,7 @@ import matplotlib.patches as mpatches
 matplotlib.use("Agg")
 
 
-class GENOME(object):
+class Genome(object):
     def __init__(self, figsize=(6, 6)):
         self.figure = plt.figure(figsize=figsize)
         # Initial Settings, User cannnot touch the following settings
