@@ -305,22 +305,22 @@ class Genome(object):
             for j in range(1, len(labelList)):
                 thetal = (2 * np.pi * (locus_info["start"] + labelList[j]) /
                           self.sum_length)
-                # thetat = -(thetal + 0.5 * np.pi) - np.pi
+                thetat = -(thetal + 0.5 * np.pi) - np.pi
                 self.ax.bar(
                     [thetal, thetal], [0, height], bottom=bottom, color="k",
                     width=width, linewidth=0
                 )  # tick
                 if thetal > 6:
                     pass
-                # else:
-                #     self.ax.text(
-                #         0.48*np.cos(thetat) + 0.5, 0.48 * np.sin(thetat) + 0.5,
-                #         str(labelList[j] / 1000000.0) + "",
-                #         horizontalalignment='center',
-                #         rotation=(thetat - 0.5 * np.pi) * 180 / np.pi,
-                #         verticalalignment='center', fontsize=15,
-                #         transform=self.ax.transAxes
-                #     )
+                else:
+                    self.ax.text(
+                        0.48*np.cos(thetat) + 0.5, 0.48 * np.sin(thetat) + 0.5,
+                        str(labelList[j]) + "",
+                        horizontalalignment='center',
+                        rotation=(thetat - 0.5 * np.pi) * 180 / np.pi,
+                        verticalalignment='center', fontsize=4,
+                        transform=self.ax.transAxes
+                    )
 
     def chord_plot(self, start_list, end_list, top=900, bottom=0,
                    color="#1F77B4", alpha=0.5):
