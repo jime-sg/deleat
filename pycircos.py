@@ -8,12 +8,10 @@ import math
 import collections
 import numpy as np
 import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
-
-
-matplotlib.use("Agg")
 
 
 class Genome(object):
