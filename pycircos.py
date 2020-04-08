@@ -254,7 +254,7 @@ class Genome(object):
         )
         if xaxes:
             self.ax.bar(
-                [pos, pos], [0, 3], bottom=bottom,
+                [pos, pos], [0, 2], bottom=bottom,
                 width=(self.theta[self.locus_dict[key]["end"] - 1] -
                        self.theta[self.locus_dict[key]["start"]]),
                 linewidth=0, color=color
