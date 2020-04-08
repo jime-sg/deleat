@@ -302,7 +302,7 @@ class Genome(object):
                     width=2 * np.pi * locus_len / self.sum_length, lw=0
                 )
 
-            for j in range(1, len(labelList)):
+            for j in range(len(labelList)):
                 thetal = (2 * np.pi * (locus_info["start"] + labelList[j]) /
                           self.sum_length)
                 thetat = -(thetal + 0.5 * np.pi) - np.pi
