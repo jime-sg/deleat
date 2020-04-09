@@ -146,7 +146,7 @@ class Genome(object):
             s = e + self.interspace
 
     def plot_feature(self, feat_type="repeat_region", bottom=520, height=80,
-                     color="#C9BD74", requirement=lambda x: 1):
+                     thicken=None, color="#C9BD74", requirement=lambda x: 1):
         # Example of requirement is lambda x: "SPADE" in x.qualifiers["note"][0]
         feat_set = set([])
         for Id in self.locus_dict.keys():
@@ -157,6 +157,12 @@ class Genome(object):
                     start = locus_info["start"] + feat.location.start
                     end = locus_info["start"] + feat.location.end
                     pos = 2 * start * np.pi / self.sum_length
+                    if thicken:
+                        w0 = end - start
+                        w1 = (end - start) * thicken
+                        offset = (w1 - w0) / 2
+                        start -= offset
+                        end += offset
                     self.ax.bar(
                         [pos, pos], [0, height], bottom=bottom,
                         width=2.0 * np.pi * (end - start) / self.sum_length,
