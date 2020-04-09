@@ -35,9 +35,14 @@ class Genome(object):
 
     def read_locus(self, record_parse, record_name=None, interspace=0.01,
                    plot=True, bottom=300, height=50, start=0, end=360,
-                   color_list=("#E3E3E3",), features=True,
+                   color_list=("#E3E3E3",), features=True, reset=False,
                    requirement=lambda x: "NC_" in x):
         # The interspace is the space ratio between locus
+        if reset:
+            self.sum_length = 0
+            self.locus_dict = collections.OrderedDict()
+            self.record_dict = collections.OrderedDict()
+            self.data = []
         if record_name is None:
             record_name = "Record_" + str(len(self.record_dict.keys()))
         self.record_dict[record_name] = {}
@@ -51,7 +56,8 @@ class Genome(object):
                 if features:
                     self.locus_dict[locus.id]["features"] = locus.features
                 self.sum_length += self.locus_dict[locus.id]["length"]
-                self.record_dict[record_name]["locus_dict"][locus.id] = self.locus_dict[locus.id]
+                self.record_dict[record_name]["locus_dict"][locus.id] = \
+                    self.locus_dict[locus.id]
 
         self.interspace = interspace * self.sum_length
         self.sum_length += self.interspace * len(self.locus_dict.keys())
@@ -99,13 +105,15 @@ class Genome(object):
                 self.locus_dict[locus_name] = {}
                 self.locus_dict[locus_name]["length"] = length
                 self.sum_length += self.locus_dict[locus_name]["length"]
-                self.record_dict[record_name]["locus_dict"][locus_name] = self.locus_dict[locus_name]
+                self.record_dict[record_name]["locus_dict"][locus_name] = \
+                    self.locus_dict[locus_name]
 
             elif requirement(locus_name):
                 self.locus_dict[locus_name] = {}
                 self.locus_dict[locus_name]["length"] = length
                 self.sum_length += self.locus_dict[locus_name]["length"]
-                self.record_dict[record_name]["locus_dict"][locus_name] = self.locus_dict[locus_name]
+                self.record_dict[record_name]["locus_dict"][locus_name] = \
+                    self.locus_dict[locus_name]
 
         self.interspace = interspace * self.sum_length
         self.sum_length += self.interspace * len(self.locus_dict.keys())
@@ -161,7 +169,8 @@ class Genome(object):
         for i in range(0, len(seq), slide_size):
             gc_amount = (
                     (seq[i:i + window_size].upper().count("G") +
-                     (seq[i:i + window_size].upper().count("C")) * 1.0 / window_size)
+                     (seq[i:i + window_size].upper().count("C")) * 1.0 /
+                     window_size)
             )
             gc_amounts.append(gc_amount)
         gc_amounts.append(
@@ -278,7 +287,8 @@ class Genome(object):
             cmaplist = [cmap(i) for i in range(256)]
             width = (
                     (self.theta[self.locus_dict[key]["end"] - 1] -
-                     self.theta[self.locus_dict[key]["start"]]) * 1.0 / data.size
+                     self.theta[self.locus_dict[key]["start"]]) * 1.0 /
+                    data.size
             )
             for i, atheta in enumerate(theta):
                 index = 255.0 * (data[i] - min(data)) / (max(data) - min(data))
@@ -288,7 +298,7 @@ class Genome(object):
                 )
 
     def plot_ticks(self, bottom=900, height=20, width=0.001 * np.pi,
-                   space=1000000, axes=False):
+                   space=1000000, axes=False, labels=False):
         for i, key in enumerate(self.locus_dict.keys()):
             locus_info = self.locus_dict[key]
             locus_len = locus_info["end"] - locus_info["start"]
@@ -310,17 +320,19 @@ class Genome(object):
                     [thetal, thetal], [0, height], bottom=bottom, color="k",
                     width=width, linewidth=0
                 )  # tick
-                if thetal > 6:
-                    pass
-                else:
-                    self.ax.text(
-                        0.48*np.cos(thetat) + 0.5, 0.48 * np.sin(thetat) + 0.5,
-                        str(labelList[j]) + "",
-                        horizontalalignment='center',
-                        rotation=(thetat - 0.5 * np.pi) * 180 / np.pi,
-                        verticalalignment='center', fontsize=4,
-                        transform=self.ax.transAxes
-                    )
+                if labels:
+                    if thetal > 6:
+                        pass
+                    else:
+                        self.ax.text(
+                            0.48 * np.cos(thetat) + 0.5,
+                            0.48 * np.sin(thetat) + 0.5,
+                            str(labelList[j]) + "",
+                            horizontalalignment='center',
+                            rotation=(thetat - 0.5 * np.pi) * 180 / np.pi,
+                            verticalalignment='center', fontsize=4,
+                            transform=self.ax.transAxes
+                        )
 
     def chord_plot(self, start_list, end_list, top=900, bottom=0,
                    color="#1F77B4", alpha=0.5):
