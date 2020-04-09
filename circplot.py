@@ -21,28 +21,27 @@ COLORS = {
 }
 GENE_H = 60
 RNA_H = 20
-SPACE = 70
+GC_H = 60
+SPACE = 80
 NEREGION_H = 50
 # NEREGION_REQ = (lambda x: "note" in x.qualifiers and
 #                           x.qualifiers["note"][0] == "non-essential region")  # FIXME
 NEREGION_REQ = (lambda x: "colour" in x.qualifiers)  # FIXME
 
 
-def plot(genbank, out_file, out_fmt):
+def plot(gb_outer, gb_inner, out_file, out_fmt):
     y = 900
     genome = pycircos.Genome()
-    # Outer circle
+    # OUTER: circle
     h = 2
     y += h
     genome.read_locus(
-        SeqIO.parse(genbank, "genbank"),
-        interspace=0, bottom=y+h, height=h,
-        color_list=[COLORS["circle"]],
+        SeqIO.parse(gb_outer, "genbank"),
+        interspace=0, bottom=y + 4, height=h,
+        color_list=[COLORS["circle"]]
     )
-
-    # Ticks
-    genome.plot_ticks(bottom=y+6, height=20, space=100000)
-
+    # OUTER: ticks
+    genome.plot_ticks(bottom=y + 6, height=20, space=100000)
     # + strand genes
     h = GENE_H
     y -= h
@@ -52,7 +51,7 @@ def plot(genbank, out_file, out_fmt):
         requirement=lambda x: x.strand == 1,
         color=COLORS["gp"]
     )
-    # - strand genes
+    # OUTER: - strand genes
     y -= h
     genome.plot_feature(
         feat_type="gene",
@@ -60,22 +59,12 @@ def plot(genbank, out_file, out_fmt):
         requirement=lambda x: x.strand == -1,
         color=COLORS["gm"]
     )
-    # GC skew
-    h = GENE_H
-    chrom = list(genome.locus_dict.keys())[0]
-    genome.calc_gcskew(chrom, window_size=1000, slide_size=1000)
-    genome.plot_data(
-        chrom, pycircos.np.array(genome.locus_dict[chrom]["gc_skew"]),
-        bottom=y+h, height=h,
-        xaxes=True, plot_style="fill",
-        color="#e8e8e8", color1=COLORS["pos"], color2=COLORS["neg"]
-    )
-    # RNA genes
+    # OUTER: RNA genes
     h = RNA_H
     y -= h + 5
     genome.plot_feature(
         feat_type="tRNA",
-        bottom=y, height=h,
+        bottom=y, height=h, thicken=5,
         color=COLORS["rt"]
     )
     genome.plot_feature(
@@ -83,33 +72,48 @@ def plot(genbank, out_file, out_fmt):
         bottom=y, height=h,
         color=COLORS["rr"]
     )
-
-    # Non-essential regions
+    # OUTER: GC skew
+    h = GC_H
+    y -= 2 * h
+    chrom = list(genome.locus_dict.keys())[0]
+    genome.calc_gcskew(chrom, window_size=1000, slide_size=1000)
+    genome.plot_data(
+        chrom, pycircos.np.array(genome.locus_dict[chrom]["gc_skew"]),
+        bottom=y + h, height=h,
+        xaxes=True, plot_style="fill",
+        color="#e8e8e8", color1=COLORS["pos"], color2=COLORS["neg"]
+    )
+    # OUTER: non-essential regions
     h = NEREGION_H
-    y -= h + 40
+    y -= h
     genome.plot_feature(
         feat_type="misc_feature",
         bottom=y, height=h,
         requirement=NEREGION_REQ,
         color=COLORS["ner"]
     )
-
-    # + strand genes
-    h = GENE_H
+    # TODO: más features que mostrar
+    # INNER: circle
+    h = 2
     y -= h + SPACE
+    genome.read_locus(
+        SeqIO.parse(gb_inner, "genbank"),
+        interspace=0, bottom=y + 4, height=h,
+        color_list=[COLORS["circle"]],
+        reset=True
+    )
+    # INNER: ticks
+    genome.plot_ticks(bottom=y + 6, height=20, space=100000)
+    # INNER: + strand genes
+    h = GENE_H
+    y -= h
     genome.plot_feature(
         feat_type="gene",
         bottom=y, height=h,
         requirement=lambda x: x.strand == 1,
         color=COLORS["gp"]
     )
-    genome.plot_feature(
-        feat_type="CDS",
-        bottom=y, height=h,
-        requirement=lambda x: x.strand == 1 and "pseudo" in x.qualifiers,
-        color=COLORS["gp"]
-    )
-    # - strand genes
+    # INNER: - strand genes
     y -= h
     genome.plot_feature(
         feat_type="gene",
@@ -117,18 +121,12 @@ def plot(genbank, out_file, out_fmt):
         requirement=lambda x: x.strand == -1,
         color=COLORS["gm"]
     )
-    genome.plot_feature(
-        feat_type="CDS",
-        bottom=y, height=h,
-        requirement=lambda x: x.strand == -1 and "pseudo" in x.qualifiers,
-        color=COLORS["gm"]
-    )
-    # RNA genes
+    # INNER: RNA genes
     h = RNA_H
     y -= h + 5
     genome.plot_feature(
         feat_type="tRNA",
-        bottom=y, height=h,
+        bottom=y, height=h, thicken=5,
         color=COLORS["rt"]
     )
     genome.plot_feature(
@@ -136,5 +134,15 @@ def plot(genbank, out_file, out_fmt):
         bottom=y, height=h,
         color=COLORS["rr"]
     )
-    # TODO: features que mostrar en el gráfico
+    # OUTER: GC skew
+    h = GC_H
+    y -= 2 * h
+    chrom = list(genome.locus_dict.keys())[0]
+    genome.calc_gcskew(chrom, window_size=1000, slide_size=1000)
+    genome.plot_data(
+        chrom, pycircos.np.array(genome.locus_dict[chrom]["gc_skew"]),
+        bottom=y + h, height=h,
+        xaxes=True, plot_style="fill",
+        color="#e8e8e8", color1=COLORS["pos"], color2=COLORS["neg"]
+    )
     genome.save(file_name=out_file, format_type=out_fmt)

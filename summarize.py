@@ -17,7 +17,8 @@ if __name__ == "__main__":
     )
 
     circplot.plot(
-        genbank="/home/jimena/Bartonella/NC_005955_wregions.gb",
+        gb_outer="/home/jimena/Bartonella/NC_005955_wregions.gb",
+        gb_inner="/home/jimena/Escritorio/NC_005955_wregions_reduced.gb",
         out_file="/home/jimena/Dropbox/TFM/paso_circos/test4",
         out_fmt="png"
     )
