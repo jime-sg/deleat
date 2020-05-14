@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # Add Geptop results to annotation file
     geptop_results = geptop.run(
         query_file=PROTEOME,
-        deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/temp",
+        deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/temp",  # FIXME
         cv_path="/home/jimena/Bartonella/DEGdb/cv",
         cutoff=0.24,
         n_proc=4,
@@ -100,4 +100,4 @@ if __name__ == "__main__":
         # TODO elif -> otros tipos de genes
 
     # Write modified annotation file
-    SeqIO.write(mod_annotation, OUT_GENBANK, "genbank")
+    SeqIO.write(mod_annotation, OUT_GENBANK, "genbank")  # genbank m1

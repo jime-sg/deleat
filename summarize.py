@@ -13,7 +13,7 @@ from Bio.SeqRecord import SeqRecord
 import circplot
 
 
-def is_neregion(feature):  # FIXME
+def is_neregion(feature):  # FIXME -> is_deletion
     if (feature.type == "misc_feature" and
             "note" in feature.qualifiers and
             feature.qualifiers["note"][0] == "non-essential region"):
