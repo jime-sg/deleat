@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""
+"""nonessential_genes.py
 # TODO
 @author: Jimena Solana
 """
 
 from argparse import ArgumentParser
-from sys import argv  # FIXME
+import os
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -47,7 +47,7 @@ def make_description(feature):
     return description
 
 
-def integrate_scores(seqfeature_s, geptop_s):
+def integrate_scores(seqfeature_s, geptop_s):  # FIXME
     a = int(seqfeature_s.split(";")[0].split(",")[1])
     b = int(seqfeature_s.split(";")[1].split(",")[1])
     c = float(seqfeature_s.split(";")[2].split(",")[1])
@@ -62,30 +62,53 @@ if __name__ == "__main__":
         prog="nonessential-genes",
         description=""  # FIXME
     )
-    # GENBANK = "/home/jimena/Bartonella/NC_005955.gb"
-    # PROTEOME = "/home/jimena/Escritorio/proteoma.faa"
-    GENBANK = argv[1]
-    PROTEOME = argv[2]
-    OUT_GENBANK = argv[3]
+    parser.add_argument(
+        "-g0", dest="GB", required=True,
+        help="original GenBank annotation file")
+    parser.add_argument(
+        "-d", dest="DEG", required=True,
+        help="")  # TODO
+    parser.add_argument(
+        "-c", dest="CV", required=True,
+        help="")  # TODO
+    parser.add_argument(
+        "-g", dest="GEPTOP_CUTOFF", required=True, type=float,  # FIXME: "geptop"?
+        help="")  # TODO
+    parser.add_argument(
+        "-n", dest="NPROC", required=True, type=int,
+        help="")  # TODO
+    parser.add_argument(
+        "-o", dest="OUT_DIR", required=True,
+        help="directory for output files")
+    args = parser.parse_args()
+    GENBANK = args.GB
+    OUT_DIR = args.OUT_DIR
+    genbank_id = os.path.splitext(os.path.basename(GENBANK))[0]
+    GENBANK_M1 = os.path.join(OUT_DIR, genbank_id + ".gbm1")
+    PROTEOME = os.path.join(OUT_DIR, "proteome.faa")
+    DEG = args.DEG
+    CV = args.CV
+    GEPTOP_CUTOFF = args.GEPTOP_CUTOFF
+    NPROC = args.NPROC
 
-    save_proteome(
-        gb_file=GENBANK,
-        out_file=PROTEOME
-    )
+    # Check input
+    # TODO
+
+    save_proteome(gb_file=GENBANK, out_file=PROTEOME)
 
     # Add seqfeatures results to annotation file
-    mod_annotation = seqfeatures.run(GENBANK)
+    genbank_m1 = seqfeatures.run(GENBANK)
 
     # Add Geptop results to annotation file
     geptop_results = geptop.run(
         query_file=PROTEOME,
-        deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/temp",  # FIXME
-        cv_path="/home/jimena/Bartonella/DEGdb/cv",
-        cutoff=0.24,
-        n_proc=4,
-        out_path="/home/jimena/Escritorio"
-    )  # FIXME (leer argumentos de argparser)
-    for gene in mod_annotation.features:
+        deg_path=DEG,
+        cv_path=CV,
+        cutoff=GEPTOP_CUTOFF,
+        n_proc=NPROC,
+        out_path=OUT_DIR
+    )
+    for gene in genbank_m1.features:
         if gene.type == "CDS" and "translation" in gene.qualifiers:
             locus_tag = gene.qualifiers["locus_tag"][0]
             geptop_score = geptop_results[locus_tag][0]
@@ -97,7 +120,11 @@ if __name__ == "__main__":
                 seqfeature_scores,
                 geptop_score
             )]
-        # TODO elif -> otros tipos de genes
+        elif gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
+            gene.qualifiers["essentiality"] = 1
+        elif gene.type == "CDS":
+            gene.qualifiers["essentiality"] = 0
 
-    # Write modified annotation file
-    SeqIO.write(mod_annotation, OUT_GENBANK, "genbank")  # genbank m1
+
+    # Save modified-I GenBank file
+    SeqIO.write(genbank_m1, GENBANK_M1, "genbank")
