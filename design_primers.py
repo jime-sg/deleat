@@ -89,7 +89,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-g", dest="GENOME", required=True,
-        help="file containing genome sequence in FASTA format")
+        help="genome in FASTA format")
     parser.add_argument(
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
@@ -98,20 +98,20 @@ if __name__ == "__main__":
         help="name of desired deletion (e.g. D2)")
     parser.add_argument(
         "-d1", dest="DEL_START", required=True, type=int,
-        help="start position of desired deletion")
+        help="start position of deletion")
     parser.add_argument(
         "-d2", dest="DEL_END", required=True, type=int,
-        help="end position of desired deletion")
+        help="end position of deletion")
     parser.add_argument(
         "-e", dest="ENZYME", required=True,
         help="restriction enzyme used in the experiment (must cut the "
-             "megapriming product in both ends only)")
+             "megapriming product at both ends only)")
     parser.add_argument(
         "-L", dest="HR_LENGTH", metavar="HR_LENGTH", type=int, default=20,
         choices=range(15, 101),
         help=("min substrate length required for homologous recombination "
               "events (optional, default %(default)s bp)"))
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     GENOME = args.GENOME
     OUT_DIR = args.OUT_DIR.rstrip("/")
     DEL_COORDS = (args.DEL_START, args.DEL_END)

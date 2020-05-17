@@ -17,16 +17,22 @@ STEPS = [
 ]
 
 
+def print_usage():
+    print("usage: tfm <step name> <step arguments>")
+    print("valid steps are:")
+    for i, s in enumerate(STEPS):
+        print("\t%d. %s" % (i + 1, s))
+    raise SystemExit
+
+
 if __name__ == "__main__":
+    if len(argv) < 2:
+        print_usage()
     step = argv[1]
     if step not in STEPS:
         if step not in ("-h", "--help"):
             print("error: unrecognized option '%s'" % step)
-        print("usage: tfm <step name> <step arguments>")
-        print("valid steps are:")
-        for i, s in enumerate(STEPS):
-            print("\t%d. %s" % (i+1, s))
-        raise SystemExit
+        print_usage()
 
     else:
         runpy.run_module(step.replace("-", "_"), run_name="__main__")

@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     GENBANK_M3 = args.GBM3
     OUT_DIR = args.OUT_DIR
     genbank_id = os.path.splitext(os.path.basename(GENBANK_M3))[0]

@@ -139,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", dest="ESS_THRESHOLD", required=True, type=float,
         help="gene essentiality threshold")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     # GENBANK_M1 = args.GBM1
     # OUT_DIR = args.OUT_DIR
     # genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
