@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+"""circplot.py
 # TODO
 @author: Jimena Solana
 """
@@ -23,15 +23,15 @@ GENE_H = 60
 RNA_H = 20
 GC_H = 60
 SPACE = 80
-NEREGION_H = 50
-# NEREGION_REQ = (lambda x: "note" in x.qualifiers and
-#                           x.qualifiers["note"][0] == "non-essential region")  # FIXME
-NEREGION_REQ = (lambda x: "colour" in x.qualifiers)  # FIXME
+DELETION_H = 50
+DELETION_REQ = (lambda x: "note" in x.qualifiers and
+                          "deletion" in x.qualifiers["note"][0])
 
 
 def plot(gb_outer, gb_inner, out_file, out_fmt):
     y = 900
     genome = pycircos.Genome()
+    print("Drawing original genome...")
     # OUTER: circle
     h = 2
     y += h
@@ -43,6 +43,7 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
     # OUTER: ticks
     genome.plot_ticks(bottom=y + 6, height=20, space=100000)
     # + strand genes
+    print("  Genes...")
     h = GENE_H
     y -= h
     genome.plot_feature(
@@ -73,6 +74,7 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
         color=COLORS["rr"]
     )
     # OUTER: GC skew
+    print("  GC skew graph...")
     h = GC_H
     y -= 2 * h
     chrom = list(genome.locus_dict.keys())[0]
@@ -83,16 +85,17 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
         xaxes=True, plot_style="fill",
         color="#e8e8e8", color1=COLORS["pos"], color2=COLORS["neg"]
     )
-    # OUTER: non-essential regions
-    h = NEREGION_H
+    # OUTER: deletions
+    h = DELETION_H
     y -= h
     genome.plot_feature(
         feat_type="misc_feature",
         bottom=y, height=h,
-        requirement=NEREGION_REQ,
+        requirement=DELETION_REQ,
         color=COLORS["ner"]
     )
     # TODO: más features que mostrar
+    print("Drawing reduced genome...")
     # INNER: circle
     h = 2
     y -= h + SPACE
@@ -105,6 +108,7 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
     # INNER: ticks
     genome.plot_ticks(bottom=y + 6, height=20, space=100000)
     # INNER: + strand genes
+    print("  Genes...")
     h = GENE_H
     y -= h
     genome.plot_feature(
@@ -135,6 +139,7 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
         color=COLORS["rr"]
     )
     # OUTER: GC skew
+    print("  GC skew graph...")
     h = GC_H
     y -= 2 * h
     chrom = list(genome.locus_dict.keys())[0]
@@ -145,4 +150,6 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
         xaxes=True, plot_style="fill",
         color="#e8e8e8", color1=COLORS["pos"], color2=COLORS["neg"]
     )
+    print("Saving image...")
     genome.save(file_name=out_file, format_type=out_fmt)
+    print("Done.")

@@ -24,7 +24,7 @@ sep = "-"*80 + "\n"
 def check_cuts_and_repeats(seq, enz, repeats, L, direction):
     """Ensure that a region does not contain restriction enzyme targets
     or repeats.
-    
+
     Check whether a region on a genome contains enzyme targets or any
     sequence that may be substrate for homologous recombination (repeat
     equal or longer than L). If it does, shift it (right or left) until
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     else:
         raise SystemExit("\n\terror: restriction enzyme not found\t")
     try:
-        log = open("%s/%s_primer_design.txt" % (OUT_DIR, DEL_NAME), "w")
+        log = open("%s/%s_primer_design.txt" % (OUT_DIR, DEL_NAME), "w")  # FIXME: con os.path.join
     except FileNotFoundError:
         raise SystemExit("\n\terror: could not find output directory\n")
 

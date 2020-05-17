@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """define_deletions.py
+# TODO
 @author: Jimena Solana
 """
 
@@ -34,7 +35,7 @@ def get_deletions(gb_m1, l, e):
 
 def is_essential(feature, threshold):
     if (feature.type == "CDS" and
-            float(feature.qualifiers["essentiality"][0]) > threshold):  # FIXME: todos los CDS tendrán /essentiality??? comprobar
+            float(feature.qualifiers["essentiality"][0]) > threshold):
         essential = True
     else:
         essential = False
@@ -88,7 +89,6 @@ def make_table(deletions, gb_m1):
                  "contains (pseudo/hypot/non-hypot)"]
     )
     for n, deletion in enumerate(deletions.parts):
-        print(n+1, deletion, deletion.start, deletion.end)
         table.iloc[n, 0] = deletion.start + 1  # 0-based -> 1-based
         table.iloc[n, 1] = deletion.end
         length = deletion.end - deletion.start
@@ -145,13 +145,11 @@ if __name__ == "__main__":
     # genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
     # GENBANK_M2 = os.path.join(OUT_DIR, genbank_id + ".gbm2")
     # OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
-    # L = args.DEL_LENGTH
-    # E = args.ESS_THRESHOLD
+    L = args.DEL_LENGTH
+    E = args.ESS_THRESHOLD
     GENBANK_M1 = "/home/jimena/Escritorio/NC_005955.gbm1"  # FIXME
     GENBANK_M2 = "/home/jimena/Escritorio/NC_005955.gbm2"  # FIXME
     OUT_TABLE = "/home/jimena/Escritorio/deleciones.csv"  # FIXME
-    L = 10000  # FIXME
-    E = 0.5  # FIXME
 
     # Check input
     # TODO
