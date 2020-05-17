@@ -4,6 +4,7 @@
 """
 
 from argparse import ArgumentParser
+import os
 
 from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation, CompoundLocation, SeqFeature
@@ -124,17 +125,14 @@ if __name__ == "__main__":
             "A deletion is defined as any region longer than (or equal to) "
             "DEL_LENGTH not containing any gene with essentiality score "
             "higher than ESS_THRESHOLD."
-        )  # FIXME
+        )
     )
     parser.add_argument(
         "-g1", dest="GBM1", required=True,
-        help="modified-I GenBank file (input)")
+        help="modified-I GenBank file")
     parser.add_argument(
-        "-g2", dest="GBM2", required=True,
-        help="modified-II GenBank file (output)")
-    parser.add_argument(
-        "-o", dest="OUT_TABLE", required=True,
-        help="deletion data CSV file (output)")
+        "-o", dest="OUT_DIR", required=True,
+        help="directory for output files")
     parser.add_argument(
         "-l", dest="DEL_LENGTH", required=True, type=int,
         help="minimum deletion length")
@@ -143,8 +141,10 @@ if __name__ == "__main__":
         help="gene essentiality threshold")
     args = parser.parse_args()
     # GENBANK_M1 = args.GBM1
-    # GENBANK_M2 = args.GBM2
-    # OUT_TABLE = args.OUT_TABLE
+    # OUT_DIR = args.OUT_DIR
+    # genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
+    # GENBANK_M2 = os.path.join(OUT_DIR, genbank_id + ".gbm2")
+    # OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
     # L = args.DEL_LENGTH
     # E = args.ESS_THRESHOLD
     GENBANK_M1 = "/home/jimena/Escritorio/NC_005955.gbm1"  # FIXME
