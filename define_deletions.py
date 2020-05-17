@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 
 from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation, CompoundLocation, SeqFeature
-from Bio.SeqRecord import SeqRecord
 import pandas as pd
 
 
@@ -16,19 +15,18 @@ NONCODING_MARGIN = 200
 
 def get_deletions(gb_m1, l, e):
     genbank_m1 = SeqIO.read(gb_m1, "genbank")
-    essential_genes = [
-        gene for gene in genbank_m1.features if is_essential(gene, e)
-    ]
+    essential_genes = [gene for gene in genbank_m1.features
+                       if is_essential(gene, e)]
     essential_regions = CompoundLocation([
         FeatureLocation(gene.location.start - NONCODING_MARGIN,
                         gene.location.end + NONCODING_MARGIN)
         for gene in essential_genes
     ])
-    nonessential_regions = complementary_compoundloc(
-        0, len(genbank_m1), essential_regions
-    )
+    essential_regions = merge_overlaps(essential_regions)
+    nonessential_regions = complementary_compoundloc(0, len(genbank_m1),
+                                                     essential_regions)
     deletions = CompoundLocation([
-        region for region in nonessential_regions if len(region) >= l
+        region for region in nonessential_regions.parts if len(region) >= l
     ])
     return deletions
 
@@ -42,14 +40,28 @@ def is_essential(feature, threshold):
     return essential
 
 
+def merge_overlaps(comploc):
+    parts = [comploc.parts[0]]
+    for current in comploc.parts:
+        previous = parts[-1]
+        if previous.end >= current.start:
+            parts[-1] = FeatureLocation(previous.start, current.end)
+        else:
+            parts.append(current)
+    comploc_merged = CompoundLocation(parts)
+    return comploc_merged
+
+
 def complementary_compoundloc(start, end, comploc):
     complementary = FeatureLocation(start, comploc.parts[0].start)
     for i in range(len(comploc.parts) - 1):
-        print(comploc.parts[i], comploc.parts[i+1])
-        complementary += FeatureLocation(
-            comploc.parts[i].end + 1,
-            comploc.parts[i+1].start - 1
-        )
+        if comploc.parts[i+1].start - 1 < comploc.parts[i].end + 1:
+            continue
+        else:
+            complementary += FeatureLocation(
+                comploc.parts[i].end,
+                comploc.parts[i+1].start
+            )
     else:
         complementary += FeatureLocation(comploc.parts[-1].end, end)
     return complementary
@@ -60,9 +72,9 @@ def save_genbank_m2(deletions, gb_m1, gb_m2):
     for n, deletion in enumerate(deletions.parts):
         deletion_feature = SeqFeature(
             location=deletion,
-            type="misc_feature",
-            id="deletion %s" % (n + 1)
+            type="misc_feature"
         )
+        deletion_feature.qualifiers["note"] = ["deletion %s" % (n+1)]
         annot.features.append(deletion_feature)
     SeqIO.write(annot, gb_m2, "genbank")
 
@@ -70,18 +82,18 @@ def save_genbank_m2(deletions, gb_m1, gb_m2):
 def make_table(deletions, gb_m1):
     annot = SeqIO.read(gb_m1, "genbank")
     table = pd.DataFrame(
-        index=["D%d" % (n+1) for n in range(len(deletions))],
+        index=["D%d" % (n+1) for n in range(len(deletions.parts))],
         columns=["start", "end", "length", "% of genome",
                  "contains (pseudo/hypot/non-hypot)"]
     )
     for n, deletion in enumerate(deletions.parts):
-        name = "D%d" % (n+1)
-        table.loc[name, "start"] = deletion.start
-        table.loc[name, "end"] = deletion.end
-        length = deletion.end - deletion.start + 1
-        table.loc[name, "length"] = length
-        table.loc[name, "% of genome"] = length / len(annot) * 100
-        table.loc[name, "contains (pseudo/hypot/non-hypot)"] = gene_content(deletion, annot)
+        print(n+1, deletion, deletion.start, deletion.end)
+        table.iloc[n, 0] = deletion.start + 1  # 0-based -> 1-based
+        table.iloc[n, 1] = deletion.end
+        length = deletion.end - deletion.start
+        table.iloc[n, 2] = length
+        table.iloc[n, 3] = length / len(annot) * 100
+        table.iloc[n, 4] = gene_content(deletion, annot)
     return table
 
 
@@ -107,13 +119,42 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
         prog="define-deletions",
-        description=""  # FIXME
+        description=(
+            "Compute table of proposed deletions. "
+            "A deletion is defined as any region longer than (or equal to) "
+            "DEL_LENGTH not containing any gene with essentiality score "
+            "higher than ESS_THRESHOLD."
+        )  # FIXME
     )
+    parser.add_argument(
+        "-g1", dest="GBM1", required=True,
+        help="modified-I GenBank file (input)")
+    parser.add_argument(
+        "-g2", dest="GBM2", required=True,
+        help="modified-II GenBank file (output)")
+    parser.add_argument(
+        "-o", dest="OUT_TABLE", required=True,
+        help="deletion data CSV file (output)")
+    parser.add_argument(
+        "-l", dest="DEL_LENGTH", required=True, type=int,
+        help="minimum deletion length")
+    parser.add_argument(
+        "-e", dest="ESS_THRESHOLD", required=True, type=float,
+        help="gene essentiality threshold")
+    args = parser.parse_args()
+    # GENBANK_M1 = args.GBM1
+    # GENBANK_M2 = args.GBM2
+    # OUT_TABLE = args.OUT_TABLE
+    # L = args.DEL_LENGTH
+    # E = args.ESS_THRESHOLD
     GENBANK_M1 = "/home/jimena/Escritorio/NC_005955.gbm1"  # FIXME
     GENBANK_M2 = "/home/jimena/Escritorio/NC_005955.gbm2"  # FIXME
     OUT_TABLE = "/home/jimena/Escritorio/deleciones.csv"  # FIXME
     L = 10000  # FIXME
     E = 0.5  # FIXME
+
+    # Check input
+    # TODO
 
     proposed_deletions = get_deletions(GENBANK_M1, L, E)
     save_genbank_m2(proposed_deletions, GENBANK_M1, GENBANK_M2)
