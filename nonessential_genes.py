@@ -12,8 +12,32 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import pandas as pd
 
-import seqfeatures
 import geptop
+import codonw
+
+
+CODONW_FEATURES = ["-enc", "-gc", "-sil_base", "-L_sym", "-L_aa", "-aro",
+                   "-hyd"]
+
+
+def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
+    # Extract proteome
+    proteome_aa = os.path.join(out_dir, "proteome.faa")
+    proteome_nt = os.path.join(out_dir, "proteome.fna")
+    extract_cds(gb_file=gb, out_aa=proteome_aa, out_nt=proteome_nt)
+
+    # Strand data
+    feature_table = strand(proteome_aa, ori=ori, ter=ter)
+
+    # Geptop scores
+    geptop_results = geptop.run(query_file=proteome_aa, **geptop_params)
+    for gene, score in geptop_results.items():
+        feature_table.loc[gene, "geptop"] = score[0]
+
+    # CodonW features
+    codonw_results = codonw.run(proteome_nt, codonw_features)
+    feature_table.join(codonw_results)
+    return results
 
 
 def extract_cds(gb_file, out_aa, out_nt):
@@ -21,6 +45,9 @@ def extract_cds(gb_file, out_aa, out_nt):
     proteins_nt = []
     annot = SeqIO.read(gb_file, "genbank")
     for feature in annot.features:
+        if "essentiality" in feature.qualifiers:
+            # Ignore already annotated genes
+            continue
         if (feature.type == "CDS" and
                 "translation" in feature.qualifiers and
                 "locus_tag" in feature.qualifiers):
@@ -30,7 +57,7 @@ def extract_cds(gb_file, out_aa, out_nt):
                 description=make_description(feature)
             )
             protein_nt = SeqRecord(
-                seq=feature.extract(annot.seq),  # FIXME
+                seq=feature.extract(annot.seq),
                 id=feature.qualifiers["locus_tag"][0],
                 description=make_description(feature)
             )
@@ -73,15 +100,6 @@ def strand(proteome, ori, ter):  # FIXME: comprobar
     return strand_results
 
 
-def integrate_scores(seqfeature_s, geptop_s):  # FIXME
-    a = int(seqfeature_s.split(";")[0].split(",")[1])
-    b = int(seqfeature_s.split(";")[1].split(",")[1])
-    c = float(seqfeature_s.split(";")[2].split(",")[1])
-    d = geptop_s
-    score = a + b + c + d
-    return score
-
-
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
@@ -106,6 +124,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
+    # TODO: añadir ORI y TER (opcionales)
     args, unknown = parser.parse_known_args()
     GENBANK = args.GB
     OUT_DIR = args.OUT_DIR
@@ -121,50 +140,33 @@ if __name__ == "__main__":
 
     # Get ori + ter coordinates
     # TODO
-    ori = 0
-    ter = 500000
+    ori = 0  # FIXME
+    ter = 500000  # FIXME
 
-    # Extract proteome
-    proteome_aa = os.path.join(OUT_DIR, "proteome.faa")
-    proteome_nt = os.path.join(OUT_DIR, "proteome.fna")
-    extract_cds(gb_file=GENBANK, out_aa=proteome_aa, out_nt=proteome_nt)
+    # Get table of all gene features
+    geptop_params = {
+        "deg_path": DEG,
+        "cv_path": CV,
+        "cutoff": GEPTOP_CUTOFF,
+        "n_proc": NPROC,
+        "out_path": OUT_DIR
+    }
+    results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
+                                geptop_params, CODONW_FEATURES)
+    
+    # TODO: predicción
+    essentiality_scores = {}  # {locus_tag: p(essential)}
 
-    # Get strand data
-    results = strand(proteome_aa, ori=ori, ter=ter)
-
-    # Get Geptop scores
-    geptop_results = geptop.run(
-        query_file=proteome_aa,
-        deg_path=DEG,
-        cv_path=CV,
-        cutoff=GEPTOP_CUTOFF,
-        n_proc=NPROC,
-        out_path=OUT_DIR
-    )
-    for gene, score in geptop_results.items():
-        results.loc[gene, "geptop"] = score[0]
-
-
-    # Add seqfeatures results to annotation file
-    genbank_m1 = seqfeatures.run(GENBANK)
-
-    for gene in genbank_m1.features:
-        if gene.type == "CDS" and "translation" in gene.qualifiers:
+    # Create modified-I GenBank file
+    annotation = SeqIO.read(GENBANK, "genbank")
+    for gene in annotation.features:
+        if (gene.type == "CDS" and
+                "translation" in gene.qualifiers and
+                "locus_tag" in gene.qualifiers):
             locus_tag = gene.qualifiers["locus_tag"][0]
-            geptop_score = geptop_results[locus_tag][0]
-            gene.qualifiers["geptop"] = [geptop_score]
-
-            # Add integrated score to annotation file
-            seqfeature_scores = gene.qualifiers["seqfeatures"][0]
-            gene.qualifiers["essentiality"] = [integrate_scores(
-                seqfeature_scores,
-                geptop_score
-            )]
+            gene.qualifiers["essentiality"] = essentiality_scores[locus_tag]
         elif gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
             gene.qualifiers["essentiality"] = 1
-        elif gene.type == "CDS":
+        elif gene.type == "CDS":  # pseudo-gene
             gene.qualifiers["essentiality"] = 0
-
-
-    # Save modified-I GenBank file
-    SeqIO.write(genbank_m1, GENBANK_M1, "genbank")
+    SeqIO.write(annotation, GENBANK_M1, "genbank")
