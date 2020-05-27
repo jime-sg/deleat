@@ -36,8 +36,8 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
 
     # CodonW features
     codonw_results = codonw.run(proteome_nt, codonw_features)
-    feature_table.join(codonw_results)
-    return results
+    feature_table = feature_table.join(codonw_results)
+    return feature_table
 
 
 def extract_cds(gb_file, out_aa, out_nt):
@@ -78,7 +78,7 @@ def make_description(feature):
 
 
 def strand(proteome, ori, ter):  # FIXME: comprobar
-    proteins = list(SeqIO.read(proteome, "fasta"))
+    proteins = list(SeqIO.parse(proteome, "fasta"))
     strand_results = pd.DataFrame(
         index=[prot.id for prot in proteins],
         columns=["strand_lead"]
@@ -128,6 +128,7 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     GENBANK = args.GB
     OUT_DIR = args.OUT_DIR
+    os.makedirs(OUT_DIR, exist_ok=True)
     genbank_id = os.path.splitext(os.path.basename(GENBANK))[0]
     GENBANK_M1 = os.path.join(OUT_DIR, genbank_id + ".gbm1")
     DEG = args.DEG
@@ -140,8 +141,8 @@ if __name__ == "__main__":
 
     # Get ori + ter coordinates
     # TODO
-    ori = 0  # FIXME
-    ter = 500000  # FIXME
+    ori = 1581000  # FIXME
+    ter = 723000  # FIXME
 
     # Get table of all gene features
     geptop_params = {
@@ -153,7 +154,9 @@ if __name__ == "__main__":
     }
     results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
                                 geptop_params, CODONW_FEATURES)
-    
+    # results.to_csv("/home/jimena/Escritorio/pruebas/out/resultados.csv")  # FIXME
+    # exit()  # FIXME
+
     # TODO: predicción
     essentiality_scores = {}  # {locus_tag: p(essential)}
 
@@ -163,6 +166,9 @@ if __name__ == "__main__":
         if (gene.type == "CDS" and
                 "translation" in gene.qualifiers and
                 "locus_tag" in gene.qualifiers):
+            if "essentiality" in gene.qualifiers:
+                # Ignore already annotated genes
+                continue
             locus_tag = gene.qualifiers["locus_tag"][0]
             gene.qualifiers["essentiality"] = essentiality_scores[locus_tag]
         elif gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
