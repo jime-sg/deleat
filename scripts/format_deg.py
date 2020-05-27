@@ -91,10 +91,10 @@ def merge():
 if __name__ == "__main__":
     DEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-p-15.2/"
     DNEG_DIR = "/home/jimena/Bartonella/DEGdb/deg-np-15.2/"
-    DEG_ANNOTATION = DEG_DIR + "degannotation-p.dat"
-    DNEG_ANNOTATION = DNEG_DIR + "degannotation-np.dat"
-    DEG_FASTA = DEG_DIR + "degaa-p.dat"
-    DNEG_FASTA = DNEG_DIR + "degaa-np.dat"
+    DEG_ANNOTATION = os.path.join(DEG_DIR, "degannotation-p.dat")
+    DNEG_ANNOTATION = os.path.join(DNEG_DIR, "degannotation-np.dat")
+    DEG_FASTA = os.path.join(DEG_DIR, "degaa-p.dat")
+    DNEG_FASTA = os.path.join(DNEG_DIR, "degaa-np.dat")
     ORGANISMS = "/home/jimena/Bartonella/DEGdb/organisms.txt"
     OUT_DIR = "/home/jimena/Bartonella/DEGdb/deg_byorg"
     os.makedirs(os.path.join(OUT_DIR, "essential"), exist_ok=True)
