@@ -10,6 +10,8 @@ import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.SeqUtils import GC_skew
+import numpy as np
 import pandas as pd
 
 import geptop
@@ -18,6 +20,15 @@ import codonw
 
 CODONW_FEATURES = ["-enc", "-gc", "-sil_base", "-L_sym", "-L_aa", "-aro",
                    "-hyd"]
+
+
+def find_ori_ter(gb):
+    dna = gb.seq
+    w = 100
+    cum_gcskew = np.cumsum(GC_skew(dna, window=w))
+    ori = np.argmax(cum_gcskew) * w
+    ter = np.argmin(cum_gcskew) * w
+    return ori, ter
 
 
 def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
@@ -116,9 +127,6 @@ if __name__ == "__main__":
         "-c", dest="CV", required=True,
         help="")  # TODO
     parser.add_argument(
-        "-g", dest="GEPTOP_CUTOFF", required=True, type=float,  # FIXME: "geptop"?
-        help="")  # TODO
-    parser.add_argument(
         "-n", dest="NPROC", required=True, type=int,
         help="")  # TODO
     parser.add_argument(
@@ -133,29 +141,28 @@ if __name__ == "__main__":
     GENBANK_M1 = os.path.join(OUT_DIR, genbank_id + ".gbm1")
     DEG = args.DEG
     CV = args.CV
-    GEPTOP_CUTOFF = args.GEPTOP_CUTOFF
     NPROC = args.NPROC
 
     # Check input
     # TODO
 
     # Get ori + ter coordinates
-    # TODO
-    ori = 1581000  # FIXME
-    ter = 723000  # FIXME
+    # TODO: condición para calcularlo
+    ori, ter = find_ori_ter(GENBANK)
+    # ori = 1581000  # FIXME
+    # ter = 723000  # FIXME
 
     # Get table of all gene features
     geptop_params = {
         "deg_path": DEG,
         "cv_path": CV,
-        "cutoff": GEPTOP_CUTOFF,
         "n_proc": NPROC,
         "out_path": OUT_DIR
     }
     results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
                                 geptop_params, CODONW_FEATURES)
-    # results.to_csv("/home/jimena/Escritorio/pruebas/out/resultados.csv")  # FIXME
-    # exit()  # FIXME
+    results.to_csv("/home/jimena/Escritorio/pruebas/out/resultados.csv")  # FIXME
+    exit()  # FIXME
 
     # TODO: predicción
     essentiality_scores = {}  # {locus_tag: p(essential)}
