@@ -72,7 +72,7 @@ ORG_NAMES = {
 }
 
 
-def run(query_file, deg_path, cv_path, cutoff, n_proc, out_path):
+def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     """
     Get essentiality scores and classification for each protein in a
     file, according to the Geptop algorithm (prediction based on
