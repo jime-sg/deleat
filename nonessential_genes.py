@@ -26,8 +26,9 @@ def find_ori_ter(gb):
     dna = gb.seq
     w = 100
     cum_gcskew = np.cumsum(GC_skew(dna, window=w))
-    ori = np.argmax(cum_gcskew) * w
-    ter = np.argmin(cum_gcskew) * w
+    ori = np.argmin(cum_gcskew) * w
+    ter = np.argmax(cum_gcskew) * w
+    print("Found ori and ter positions: %d, %d" % (ori, ter))
     return ori, ter
 
 
@@ -148,7 +149,8 @@ if __name__ == "__main__":
 
     # Get ori + ter coordinates
     # TODO: condición para calcularlo
-    ori, ter = find_ori_ter(GENBANK)
+    annotation = SeqIO.read(GENBANK, "genbank")
+    ori, ter = find_ori_ter(annotation)
     # ori = 1581000  # FIXME
     # ter = 723000  # FIXME
 
@@ -168,7 +170,6 @@ if __name__ == "__main__":
     essentiality_scores = {}  # {locus_tag: p(essential)}
 
     # Create modified-I GenBank file
-    annotation = SeqIO.read(GENBANK, "genbank")
     for gene in annotation.features:
         if (gene.type == "CDS" and
                 "translation" in gene.qualifiers and
