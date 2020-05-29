@@ -9,10 +9,9 @@ import runpy
 
 STEPS = [
     "nonessential-genes",
-    "nonessential-regions",
     "define-deletions",
     "revise-deletions",
-    "design-primers",
+    "design-all-primers",
     "summarize"
 ]
 
