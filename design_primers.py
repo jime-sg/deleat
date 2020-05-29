@@ -7,13 +7,14 @@
 """
 
 from argparse import ArgumentParser
+import os
 
 from Bio import SeqIO
 from Bio.Restriction import AllEnzymes
 
 from region import Region
 import vmatch
-import primer
+import primer as pr
 
 
 MARGIN_SIZE = 1000
@@ -113,7 +114,7 @@ if __name__ == "__main__":
               "events (optional, default %(default)s bp)"))
     args, unknown = parser.parse_known_args()
     GENOME = args.GENOME
-    OUT_DIR = args.OUT_DIR.rstrip("/")
+    OUT_DIR = args.OUT_DIR
     DEL_COORDS = (args.DEL_START, args.DEL_END)
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     else:
         raise SystemExit("\n\terror: restriction enzyme not found\t")
     try:
-        log = open("%s/%s_primer_design.txt" % (OUT_DIR, DEL_NAME), "w")  # FIXME: con os.path.join
+        log = open(os.path.join(OUT_DIR, DEL_NAME + "_primer_design.txt"), "w")
     except FileNotFoundError:
         raise SystemExit("\n\terror: could not find output directory\n")
 
@@ -177,17 +178,17 @@ if __name__ == "__main__":
     # Design primers
     log.write(sep + "Designing primers...\n")
     all_primers = {
-        1: primer.design(margin1, crit_pos=(del_region.s(), "L")),
-        2: primer.design(margin2, crit_pos=(del_region.e(), "R"))
+        1: pr.design(margin1, crit_pos=(del_region.s(), "L")),
+        2: pr.design(margin2, crit_pos=(del_region.e(), "R"))
     }
     log.write("\nBest primer pairs for margin 1 (left):\n")
-    log.write(primer.write_pairs(all_primers[1]))
+    log.write(pr.write_pairs(all_primers[1]))
     log.write("\nBest primer pairs for margin 2 (right):\n")
-    log.write(primer.write_pairs(all_primers[2]))
+    log.write(pr.write_pairs(all_primers[2]))
 
     # Choose primer pairs
     log.write("\nChoosing primers...")
-    megapriming = primer.choose(all_primers, genome, enzyme)
+    megapriming = pr.choose(all_primers, genome, enzyme)
     log.write("\nDone.\n")
     log.write(sep)
     log.write("\nSelected pairs of primers:\n")
@@ -198,7 +199,7 @@ if __name__ == "__main__":
         )
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
-        syst_name = primer.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
+        syst_name = pr.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
         log.write("%s: %s\n" % (syst_name, primer))
     log.write(
         "\nWarning: leading 'nnnnnn' in PCR1_F and PCR2_R primers should be "
@@ -218,8 +219,8 @@ if __name__ == "__main__":
     )
     megapriming.save_pcr_regions(DEL_NAME, OUT_DIR)
     log.write(
-        "\nPCR region sequences saved at %s/%s_PCR_regions.fna.\n"
-        % (OUT_DIR, DEL_NAME)
+        "\nPCR region sequences saved at %s_PCR_regions.fna.\n"
+        % (os.path.join(OUT_DIR, DEL_NAME))
     )
     log.write(
         "\nFinal size of deletion '%s': %.1f kb\n"

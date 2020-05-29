@@ -5,6 +5,7 @@
 """
 
 from itertools import product
+import os
 
 import primer3
 from Bio import SeqIO
@@ -48,7 +49,7 @@ class Primer:
 
     def __init__(self, p3results_dict, primer_n, primer_dir):
         """Collect all information returned by Primer3 about a primer.
-        
+
         Parse results dictionary returned by Primer3 in order to extract
         all information about a primer, and save it to instance
         attributes. Inits Primer with id, start, end, sequence, temp,
@@ -101,7 +102,7 @@ class Primer:
 
 class PrimerSet:
     """A set of four primers that defines two PCR regions for megapriming.
-    
+
     Attributes:
         PCR1F, PCR1R, PCR2F, PCR2R (primers.Primer): forward and reverse
             primers for PCR1 (left), and forward and reverse primers for
@@ -178,7 +179,7 @@ class PrimerSet:
 
     def get_PCR_regions(self, global_seq):
         """Define PCR regions (left & right) delimited by the primer set.
-        
+
         Args:
             global_seq (Bio.Seq.Seq): template sequence.
         Returns:
@@ -220,7 +221,7 @@ class PrimerSet:
             del_name (str): name of genome deletion.
             path (str): output file path.
         """
-        with open("%s/%s_PCR_regions.fna" % (path, del_name), "w") as f:
+        with open(os.path.join(path, del_name + "_PCR_regions.fna"), "w") as f:
             pcr1 = self.PCR1_region
             pcr2 = self.PCR2_region
             prod = self.get_product()
@@ -238,7 +239,7 @@ class PrimerSet:
 
 def design(region, crit_pos):
     """Design PCR primers on a template sequence, using Primer3.
-    
+
     Args:
         region (region.Region): region spanning coordinates of
             SEQUENCE_INCLUDED_REGION arg in Primer3 design function. All
@@ -263,7 +264,7 @@ def design(region, crit_pos):
 
 def p3_design(region, crit_pos):
     """API function for Primer3 primer design.
-    
+
     Args:
         region (region.Region): region spanning coordinates of
             SEQUENCE_INCLUDED_REGION arg in Primer3 design function. All
@@ -323,8 +324,8 @@ def write_pairs(primer_dict):
         lp = primer_dict["LEFT_%d" % n]
         rp = primer_dict["RIGHT_%d" % n]
         prod_size = rp.e() - lp.s() + 1
-        with open("/home/jimena/Escritorio/product_lengths.txt", "a") as f:  # FIXME
-            f.write(str(prod_size) + "\n")
+        # with open("/home/jimena/Escritorio/product_lengths.txt", "a") as f:  # FIXME
+        #     f.write(str(prod_size) + "\n")
 
         results_str += (
                 "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n"
@@ -382,14 +383,14 @@ def choose(primer_dict, global_seq, enz):
         else:
             cut_ok = True
 
-    with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
-        f.write(str(size_diff) + "\n")
+    # with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
+    #     f.write(str(size_diff) + "\n")
     return primer_set
 
 
 def get_name(del_name, primer_id, design_n, primer_n, enz):
     """Name a primer using a systematic nomenclature.
-    
+
     Args:
         del_name (str): identifier of desired large genome deletion.
         primer_id (str): the primer's identifier (PCR[1|2][F|R]t).
