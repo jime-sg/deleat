@@ -6,15 +6,17 @@
 
 from sys import argv
 import os
+import shutil
 
 from Bio import SeqIO
 
 from ..nonessential_genes import (find_ori_ter, get_feature_table,
-                                CODONW_FEATURES)
+                                  CODONW_FEATURES)
+from ..geptop import ORG_NAMES
 
 DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
 CV = "/home/jimena/Bartonella/DEGdb/cv"
-RESULTS_DIR = ""  # TODO
+RESULTS_DIR = "/home/jimena/Escritorio/pruebas/features"
 
 
 if __name__ == "__main__":
@@ -24,11 +26,17 @@ if __name__ == "__main__":
     OUT_DIR = os.path.join(RESULTS_DIR, DEG_ID)
     os.makedirs(OUT_DIR, exist_ok=True)
 
+    print("Extracting features for org:", DEG_ID, ORG_NAMES[DEG_ID])
+
     annot = SeqIO.read(GENBANK, "genbank")
     ori, ter = find_ori_ter(annot.seq)
 
+    deg2 = os.path.join(RESULTS_DIR, "temp")
+    shutil.copytree(DEG, deg2)
+    os.remove(os.path.join(deg2, DEG_ID + ".faa"))
+
     geptop_params = {
-        "deg_path": DEG,  # hay que hacer un directorio auxiliar con todos los organismos de deg menos el que se está analizando
+        "deg_path": deg2,
         "cv_path": CV,
         "n_proc": NPROC,
         "out_path": OUT_DIR
@@ -37,3 +45,5 @@ if __name__ == "__main__":
     results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
                                 geptop_params, CODONW_FEATURES)
     results.to_csv(os.path.join(RESULTS_DIR, DEG_ID + "_feature_table.csv"))
+
+    shutil.rmtree(deg2)

@@ -105,6 +105,7 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     deg_organisms = [(os.path.splitext(os.path.basename(file))[0],
                       os.path.join(deg_path, file))
                      for file in os.listdir(deg_path)]
+    deg_organisms.sort(key=lambda x: x[0])
 
     print("Finding essential orthologs in:")
     for deg_id, deg_file in deg_organisms:
