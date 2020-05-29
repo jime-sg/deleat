@@ -76,7 +76,7 @@ def save_genbank_m2(deletions, gb_m1, gb_m2):
             location=deletion,
             type="misc_feature"
         )
-        deletion_feature.qualifiers["note"] = ["deletion %s" % (n+1)]
+        deletion_feature.qualifiers["note"] = ["deletion D%s" % (n+1)]
         annot.features.append(deletion_feature)
     SeqIO.write(annot, gb_m2, "genbank")
 
