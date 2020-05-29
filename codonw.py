@@ -11,6 +11,18 @@ import pandas as pd
 
 
 def run(fasta, feature_list, remove_blk=True):
+    """
+    Run CodonW for all genes in a FASTA file.
+    Args:
+        fasta (str): genes of query organism in FASTA format (nt).
+        feature_list (list): list of features to calculate for each gene
+            (as command-line arguments).
+        remove_blk (bool): whether to remove output .blk file after
+            completion.
+    Returns:
+        results (pd.DataFrame): table of results with each gene in a row
+            and each calculated feature in a column.
+    """
     print("Running CodonW...")
     out_dir = os.path.split(fasta)[0]
     out = os.path.join(out_dir, "codonw.out")
@@ -31,6 +43,13 @@ def run(fasta, feature_list, remove_blk=True):
 
 
 def read_table(csv):
+    """
+    Parse CodonW .out file into a pd.DataFrame and clean the data.
+    Args:
+        csv (str): CodonW .out file path.
+    Returns:
+        table (pd.DataFrame): CodonW results.
+    """
     table = pd.read_csv(csv, index_col="title")
     table = table.iloc[:, :-1]  # Remove empty last column
     table.Nc = pd.to_numeric(table.Nc, errors="coerce")  # Missing values > NaN
