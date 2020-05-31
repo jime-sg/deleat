@@ -10,7 +10,7 @@ import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.SeqUtils import GC_skew
+from Bio.SeqUtils import GC_skew, GC
 import numpy as np
 import pandas as pd
 
@@ -49,6 +49,10 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
     # CodonW features
     codonw_results = codonw.run(proteome_nt, codonw_features)
     feature_table = feature_table.join(codonw_results)
+
+    # Other
+    avg_gc = GC(SeqIO.read(gb, "genbank").seq) / 100
+    feature_table["deltaGC"] = feature_table["GC"] - avg_gc
     return feature_table
 
 
