@@ -21,8 +21,8 @@ from sklearn.model_selection import LeaveOneGroupOut
 from joblib import dump
 
 
-DATA_DIR = "./features"
-ID_MAP = "./features/locustag2deg.csv"
+DATA_DIR = os.path.join(os.path.dirname(__file__), "features")
+ID_MAP = os.path.join(DATA_DIR, "locustag2deg.csv")
 FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
 
 

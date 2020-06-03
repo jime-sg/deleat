@@ -16,7 +16,7 @@ from geptop import ORG_NAMES
 
 DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
 CV = "/home/jimena/Bartonella/DEGdb/cv"
-RESULTS_DIR = "/home/jimena/Escritorio/pruebas/features"
+RESULTS_DIR = "/home/jimena/Bartonella/ge_classifier/features"
 
 
 if __name__ == "__main__":

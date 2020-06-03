@@ -10,16 +10,22 @@ import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.SeqUtils import GC_skew, GC
+from Bio.SeqUtils import GC_skew
 import numpy as np
 import pandas as pd
+from joblib import load
+from sklearn.pipeline import Pipeline
 
 import geptop
 import codonw
 
 
-CODONW_FEATURES = ["-enc", "-gc", "-sil_base", "-L_sym", "-L_aa", "-aro",
-                   "-hyd"]
+# CODONW_FEATURES = ["-enc", "-gc", "-sil_base", "-L_sym", "-L_aa", "-aro",
+#                    "-hyd"]
+CODONW_FEATURES = ["-enc", "-gc", "-L_aa", "-hyd"]
+FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
+CLASSIFIER = os.path.join(os.path.dirname(__file__),
+                          "classifier/classifier.joblib")
 
 
 def find_ori_ter(gb):
@@ -49,10 +55,6 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
     # CodonW features
     codonw_results = codonw.run(proteome_nt, codonw_features)
     feature_table = feature_table.join(codonw_results)
-
-    # Other
-    avg_gc = GC(SeqIO.read(gb, "genbank").seq) / 100
-    feature_table["deltaGC"] = feature_table["GC"] - avg_gc
     return feature_table
 
 
@@ -93,7 +95,7 @@ def make_description(feature):
     return description
 
 
-def strand(proteome, ori, ter):  # FIXME: comprobar
+def strand(proteome, ori, ter):
     proteins = list(SeqIO.parse(proteome, "fasta"))
     strand_results = pd.DataFrame(
         index=[prot.id for prot in proteins],
@@ -167,11 +169,18 @@ if __name__ == "__main__":
     }
     results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
                                 geptop_params, CODONW_FEATURES)
-    results.to_csv("/home/jimena/Escritorio/pruebas/out/resultados.csv")  # FIXME
-    exit()  # FIXME
+    results.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
 
-    # TODO: predicción
-    essentiality_scores = {}  # {locus_tag: p(essential)}
+    # Load classifier and get essentiality scores
+    classifier = load(CLASSIFIER)
+    X_target = results[FEATURES].values
+    preprocess = Pipeline([
+        ("imputation", classifier.named_steps["imputation"]),
+        ("scaling", classifier.named_steps["scaling"])
+    ])
+    X_target = preprocess.fit(X_target).transform(X_target)  # Impute + scale
+    y_probs = classifier.predict_proba(X_target)
+    essentiality_scores = dict(zip(results.index, y_probs))
 
     # Create modified-I GenBank file
     for gene in annotation.features:
