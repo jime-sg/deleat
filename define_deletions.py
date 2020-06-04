@@ -16,6 +16,18 @@ NONCODING_MARGIN = 200
 
 
 def get_deletions(gb_m1, l, e):
+    """Define a list of deletions according to parameters L and E.
+
+    A deletion is defined as any region longer than (or equal to) L not
+    containing any gene with essentiality score higher than E.
+    Args:
+        gb_m1 (Bio.SeqRecord.SeqRecord): GenBank annotation
+        l (int): minimum deletion length
+        e (float): gene essentiality threshold
+    Returns:
+        deletions (Bio.SeqFeature.CompoundLocation): list of proposed
+            deletions
+    """
     essential_genes = [gene for gene in gb_m1.features
                        if is_essential(gene, e)]
     essential_regions = CompoundLocation([
@@ -33,6 +45,7 @@ def get_deletions(gb_m1, l, e):
 
 
 def is_essential(feature, threshold):
+    """Check whether a gene is essential."""
     if (feature.type == "CDS" and
             float(feature.qualifiers["essentiality"][0]) > threshold):
         essential = True
@@ -42,6 +55,15 @@ def is_essential(feature, threshold):
 
 
 def merge_overlaps(comploc):
+    """Merge overlapping regions in a CompoundLocation object.
+
+    Args:
+        comploc (Bio.SeqFeature.CompoundLocation): initial
+            CompoundLocation
+    Returns:
+        comploc_merged (Bio.SeqFeature.CompoundLocation):
+            CompoundLocation without any overlapping parts
+    """
     parts = [comploc.parts[0]]
     for current in comploc.parts:
         previous = parts[-1]
@@ -54,6 +76,17 @@ def merge_overlaps(comploc):
 
 
 def complementary_compoundloc(start, end, comploc):
+    """Get the complementary of a CompoundLocation (opposite parts).
+
+    Args:
+        start (int): start position of the genome
+        end (int): end position of the genome
+        comploc (Bio.SeqFeature.CompoundLocation): original
+            CompoundLocation
+    Returns:
+        complementary (Bio.SeqFeature.CompoundLocation): complementary
+            CompoundLocation
+    """
     complementary = FeatureLocation(start, comploc.parts[0].start)
     for i in range(len(comploc.parts) - 1):
         if comploc.parts[i+1].start - 1 < comploc.parts[i].end + 1:
@@ -69,6 +102,13 @@ def complementary_compoundloc(start, end, comploc):
 
 
 def save_genbank_m2(deletions, gb_m1, gb_m2):
+    """Generate modified-II GenBank file with annotated deletions.
+
+    Args:
+        deletions (Bio.SeqFeature.CompoundLocation): list of deletions
+        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
+        gb_m2 (str): modified-II GenBank file path
+    """
     for n, deletion in enumerate(deletions.parts):
         deletion_feature = SeqFeature(
             location=deletion,
@@ -80,6 +120,14 @@ def save_genbank_m2(deletions, gb_m1, gb_m2):
 
 
 def make_table(deletions, gb_m1):
+    """Generate a summary table of deletion statistics.
+
+    Args:
+        deletions (Bio.SeqFeature.CompoundLocation): list of deletions
+        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
+    Returns:
+        table (pd.DataFrame): table of deletion statistics
+    """
     table = pd.DataFrame(
         index=["D%d" % (n+1) for n in range(len(deletions.parts))],
         columns=["start", "end", "length", "% of genome",
@@ -96,6 +144,17 @@ def make_table(deletions, gb_m1):
 
 
 def gene_content(deletion, annot):
+    """Describe the gene content of a deletion.
+
+    For a specific deletions, returns the count of pseudo-genes, genes
+    annotated as "hypothetical protein" and genes with functional
+    annotation.
+    Args:
+        deletion (Bio.SeqFeature.FeatureLocation): a deletion
+        annot (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
+    Returns:
+        result (str): gene contents (pseudo/hypot/non-hypot)
+    """
     genes = {"pseudo": 0, "hypot": 0, "non-hypot": 0}
     for gene in annot.features:
         if gene.location.start in deletion and gene.location.end in deletion:
@@ -137,24 +196,21 @@ if __name__ == "__main__":
         "-e", dest="ESS_THRESHOLD", required=True, type=float,
         help="gene essentiality threshold")
     args, unknown = parser.parse_known_args()
-    # GENBANK_M1 = args.GBM1
-    # OUT_DIR = args.OUT_DIR
-    # genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
-    # GENBANK_M2 = os.path.join(OUT_DIR, genbank_id + ".gbm2")
-    # OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
+    GENBANK_M1 = args.GBM1
+    OUT_DIR = args.OUT_DIR
+    genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
+    GENBANK_M2 = os.path.join(OUT_DIR, genbank_id + ".gbm2")
+    OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
     L = args.DEL_LENGTH
     E = args.ESS_THRESHOLD
-    GENBANK_M1 = "/home/jimena/Escritorio/NC_005955.gbm1"  # FIXME
-    GENBANK_M2 = "/home/jimena/Escritorio/NC_005955.gbm2"  # FIXME
-    OUT_TABLE = "/home/jimena/Escritorio/deleciones.csv"  # FIXME
 
     # Check input
     # TODO
 
     annotation = SeqIO.read(GENBANK_M1, "genbank")
 
+    # Define deletions
     proposed_deletions = get_deletions(annotation, L, E)
     save_genbank_m2(proposed_deletions, annotation, GENBANK_M2)
-
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
