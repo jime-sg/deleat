@@ -16,8 +16,7 @@ NONCODING_MARGIN = 200
 
 
 def get_deletions(gb_m1, l, e):
-    genbank_m1 = SeqIO.read(gb_m1, "genbank")
-    essential_genes = [gene for gene in genbank_m1.features
+    essential_genes = [gene for gene in gb_m1.features
                        if is_essential(gene, e)]
     essential_regions = CompoundLocation([
         FeatureLocation(gene.location.start - NONCODING_MARGIN,
@@ -25,7 +24,7 @@ def get_deletions(gb_m1, l, e):
         for gene in essential_genes
     ])
     essential_regions = merge_overlaps(essential_regions)
-    nonessential_regions = complementary_compoundloc(0, len(genbank_m1),
+    nonessential_regions = complementary_compoundloc(0, len(gb_m1),
                                                      essential_regions)
     deletions = CompoundLocation([
         region for region in nonessential_regions.parts if len(region) >= l
@@ -70,19 +69,17 @@ def complementary_compoundloc(start, end, comploc):
 
 
 def save_genbank_m2(deletions, gb_m1, gb_m2):
-    annot = SeqIO.read(gb_m1, "genbank")
     for n, deletion in enumerate(deletions.parts):
         deletion_feature = SeqFeature(
             location=deletion,
             type="misc_feature"
         )
         deletion_feature.qualifiers["note"] = ["deletion D%s" % (n+1)]
-        annot.features.append(deletion_feature)
-    SeqIO.write(annot, gb_m2, "genbank")
+        gb_m1.features.append(deletion_feature)
+    SeqIO.write(gb_m1, gb_m2, "genbank")
 
 
 def make_table(deletions, gb_m1):
-    annot = SeqIO.read(gb_m1, "genbank")
     table = pd.DataFrame(
         index=["D%d" % (n+1) for n in range(len(deletions.parts))],
         columns=["start", "end", "length", "% of genome",
@@ -93,8 +90,8 @@ def make_table(deletions, gb_m1):
         table.iloc[n, 1] = deletion.end
         length = deletion.end - deletion.start
         table.iloc[n, 2] = length
-        table.iloc[n, 3] = length / len(annot) * 100
-        table.iloc[n, 4] = gene_content(deletion, annot)
+        table.iloc[n, 3] = length / len(gb_m1) * 100
+        table.iloc[n, 4] = gene_content(deletion, gb_m1)
     return table
 
 
@@ -154,8 +151,10 @@ if __name__ == "__main__":
     # Check input
     # TODO
 
-    proposed_deletions = get_deletions(GENBANK_M1, L, E)
-    save_genbank_m2(proposed_deletions, GENBANK_M1, GENBANK_M2)
+    annotation = SeqIO.read(GENBANK_M1, "genbank")
 
-    deletions_table = make_table(proposed_deletions, GENBANK_M1)
+    proposed_deletions = get_deletions(annotation, L, E)
+    save_genbank_m2(proposed_deletions, annotation, GENBANK_M2)
+
+    deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
