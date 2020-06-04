@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
+"""geptop.py
 # TODO
 @author: Jimena Solana
 """
 
 from collections import Counter
 from math import sqrt
-from time import time  # FIXME
+from time import time
 import json
 import os
 from glob import glob
@@ -157,7 +157,7 @@ def composition_vector(species_fasta):
     Args:
         species_fasta (str): species proteome in FASTA format.
     Returns:
-        cv (dict of int: float): composition vector.
+        cv (dict of int:float): composition vector.
     """
     freqs_k = Counter()  # K-words
     freqs_km1 = Counter()  # (K-1)-words
@@ -230,7 +230,7 @@ def num2word(num):
 def make_blastdb(seqs_file):
     """Make a BLAST database from a protein FASTA file.
     Args:
-        seqs_file (str): input protein sequences in FASTA format.
+        seqs_file (str): protein sequence FASTA file path.
     """
     makeblastdb = NcbimakeblastdbCommandline(
         dbtype="prot",
@@ -311,7 +311,7 @@ def get_distance(query_cv, ref_org, cv_path):
     """Calculate phylogenetic distance between two proteomes by the CV
     method.
     Args:
-        query_cv (dict of int: float): composition vector of query
+        query_cv (dict of int:float): composition vector of query
             proteome.
         ref_org (str): DEG id of subject proteome.
         cv_path (str): directory containing pre-computed composition
@@ -329,8 +329,8 @@ def get_distance(query_cv, ref_org, cv_path):
 def distance(cv1, cv2):
     """Calculate distance between two composition vectors.
     Args:
-        cv1 (dict of int: float): first composition vector.
-        cv2 (dict of int: float): second composition vector.
+        cv1 (dict of int:float): first composition vector.
+        cv2 (dict of int:float): second composition vector.
     Returns:
         dist (float): distance.
     """
@@ -348,19 +348,8 @@ def distance(cv1, cv2):
     return dist
 
 
-def get_all_distances(query_org, ref_path, deg_path):  # FIXME
-    reference_cvs = os.listdir(ref_path)
-    for genome in reference_cvs:
-        id_ = os.path.splitext(genome)[0]
-        print(id_)
-        t0 = time()
-        d = get_distance(query_org, id_, deg_path)
-        t1 = time()
-        print(d, "%.2f s" % (t1 - t0))
-
-
 def is_essential(hit_id):
-    """Determine whether a DEG hit is essential (1) or not (0)."""
+    """Check whether a DEG hit is essential (1) or not (0)."""
     deg_id = hit_id.split("|")[3]
     if "N" in deg_id:  # "DNEG" in id
         essential = 0
@@ -382,137 +371,3 @@ def normalize(raw):
     for gene in raw:
         norm[gene] = (raw[gene] - s_min) / (s_max - s_min)
     return norm
-
-
-"""
-def StrToNum(string):
-    aa_dict = {'A':0,  'C':1,  'D':2,  'E':3,  'F':4,  'G':5,
-               'H':6,  'I':7,  'K':8,  'L':9,  'M':10, 'N':11,
-               'P':12, 'Q':13, 'R':14, 'S':15, 'T':16, 'V':17,
-               'W':18, 'Y':19,
-               'B':2,  'U':1,  'X':5,  'Z':3,  'J':7}
-    number = 0
-    for i in range(len(string)):
-        if string[i] not in aa_dict:
-            return -1
-        bit = aa_dict[string[i]]
-        power = len(string)-i-1
-        number += bit*(20**power)
-    return number
-
-
-def CompositionVector(species):
-    kstring = 6
-    k = {}
-    k0 = {}
-    k1 = {}
-    k2 = {}
-    try:
-        for seqrecord in SeqIO.parse(species, "fasta"):
-            seq = str(seqrecord.seq)
-            len0 = len(seq) - kstring + 3
-            for s in range(len0):
-                start = s
-                end = kstring + s - 2
-                num = StrToNum(seq[start:end])
-                if num not in k2:
-                    k2[num] = 1
-                else:
-                    k2[num] += 1
-                if s < len0 - 2:
-                    num = StrToNum(seq[start:end+2])
-                    if num not in k0:
-                        k0[num] = 1
-                    else:
-                        k0[num] += 1
-                if s < len0 - 1:
-                    num = StrToNum(seq[start:end+1])
-                    if num not in k1:
-                        k1[num] = 1
-                    else:
-                        k1[num] += 1
-            if -1 in k0:
-                del k0[-1]
-            if -1 in k1:
-                del k1[-1]
-            if -1 in k2:
-                del k2[-1]
-
-            string0 = sum(k0.values())
-            string1 = sum(k1.values())
-            string2 = sum(k2.values())
-
-        for n1 in k1:
-            for aa in range(20):
-                n0 = n1 * 20 + aa
-                n2 = n1 % (20**(kstring-2)) * 20 + aa
-                if n2 in k1:
-                    if n0 in k0:
-                        n3 = n1 % (20**(kstring-2))
-                        p0 = 1.0 * k1[n1] * k1[n2] * string0 * string2/k2[n3]/string1/string1
-                        k[n0] = (k0[n0]-p0)/p0
-                    else:
-                        k[n0] =- 1
-        return k
-
-    except (Exception, IOError):
-        print ('Compute CV failed to: %s'%IOError)
-
-
-def Distance(CV1, CV2):
-    O = 0
-    P = 0
-    Q = 0
-
-    for value in CV1:
-        if value in CV2:
-            O += CV1[value]*CV2[value]
-            P += CV1[value]*CV1[value]
-            Q += CV2[value]*CV2[value]
-        else:
-            P += CV1[value]*CV1[value]
-
-    for value in CV2:
-        if value not in CV1:
-            Q += CV2[value]*CV2[value]
-
-    return (1-O/sqrt(P*Q))/2
-"""
-
-
-if __name__ == "__main__":
-    res = run(
-        query_file="/home/jimena/Bartonella/CDSa/all.faa",
-        deg_path="/home/jimena/Bartonella/DEGdb/deg_byorg/all",
-        cv_path="/home/jimena/Bartonella/DEGdb/cv",
-        cutoff=0.24,
-        n_proc=4,
-        out_path="/home/jimena/Escritorio"
-    )
-    for j, k in res.items():
-        print(str(j) + "\t" + str(k))
-
-    # t0 = time()
-    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
-    #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
-    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1011.json"), "r") as fi:
-    #     comp_vector2 = {int(a): b for a, b in json.load(fi).items()}
-    # comp_vector1 = composition_vector("/home/jimena/Bartonella/DEGdb/deg_byorg/all/DEG1019.faa", 6)
-    # comp_vector2 = composition_vector("/home/jimena/Bartonella/CDSa/all.faa", 6)
-    # t1 = time()
-    # d = distance(comp_vector1, comp_vector2)
-    # t2 = time()
-    # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
-
-    # t0 = time()
-    # with open(os.path.join(REFSEQS_CV_DIR, "DEG1020.json"), "r") as fi:
-    #     comp_vector1 = {int(a): b for a, b in json.load(fi).items()}
-    # comp_vector1 = CompositionVector("/home/jimena/Bartonella/DEGdb/deg_byorg/all/DEG1019.faa")
-    # comp_vector2 = CompositionVector("/home/jimena/Bartonella/CDSa/all.faa")
-    # t1 = time()
-    # d = Distance(comp_vector1, comp_vector2)
-    # t2 = time()
-    # print(d, "%.2f s" % (t1-t0), "%.2f s" % (t2-t1))
-    # for x, y in comp_vector.items():
-    #     print(x, y)
-    # print(len(comp_vector))
