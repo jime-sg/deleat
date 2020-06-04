@@ -10,7 +10,14 @@ import subprocess
 
 from Bio import SeqIO
 
-from summarize import is_deletion
+
+def is_deletion(feature):
+    if (feature.type == "misc_feature" and
+            "note" in feature.qualifiers and
+            "deletion" in feature.qualifiers["note"][0]):
+        return True
+    else:
+        return False
 
 
 if __name__ == "__main__":

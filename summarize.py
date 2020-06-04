@@ -13,15 +13,7 @@ from Bio.SeqRecord import SeqRecord
 
 import circplot
 from define_deletions import complementary_compoundloc
-
-
-def is_deletion(feature):
-    if (feature.type == "misc_feature" and
-            "note" in feature.qualifiers and
-            "deletion" in feature.qualifiers["note"][0]):
-        return True
-    else:
-        return False
+from design_all_primers import is_deletion
 
 
 def save_genbank_m4(gb_m3, gb_m4):
