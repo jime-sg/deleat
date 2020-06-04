@@ -14,7 +14,7 @@ def run(fasta, feature_list, remove_blk=True):
     """
     Run CodonW for all genes in a FASTA file.
     Args:
-        fasta (str): genes of query organism in FASTA format (nt).
+        fasta (str): query genes FASTA (nt) file path.
         feature_list (list): list of features to calculate for each gene
             (as command-line arguments).
         remove_blk (bool): whether to remove output .blk file after

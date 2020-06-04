@@ -14,9 +14,9 @@ from nonessential_genes import (find_ori_ter, get_feature_table,
                                 CODONW_FEATURES)
 from geptop import ORG_NAMES
 
-DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"
-CV = "/home/jimena/Bartonella/DEGdb/cv"
-RESULTS_DIR = "/home/jimena/Bartonella/ge_classifier/features"
+DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"  # FIXME
+CV = "/home/jimena/Bartonella/DEGdb/cv"  # FIXME
+RESULTS_DIR = "/home/jimena/Bartonella/ge_classifier/features"  # FIXME
 
 
 if __name__ == "__main__":
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         "out_path": OUT_DIR
     }
 
-    results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
+    results = get_feature_table(annot, OUT_DIR, ori, ter,
                                 geptop_params, CODONW_FEATURES)
     results.to_csv(os.path.join(RESULTS_DIR, DEG_ID + "_feature_table.csv"))
 

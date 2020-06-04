@@ -22,6 +22,8 @@ import codonw
 
 CODONW_FEATURES = ["-enc", "-gc", "-L_aa", "-hyd"]
 FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
+DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"  # FIXME
+CV = "/home/jimena/Bartonella/DEGdb/cv"  # FIXME
 CLASSIFIER = os.path.join(os.path.dirname(__file__),
                           "classifier/classifier.joblib")
 
@@ -54,8 +56,8 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
         ter (int): position of terminus of replication
         geptop_params (dict of str:str): parameters for essential
             ortholog mapping
-        codonw_features (list of str): command-line options of CodonW
-            gene features to calculate
+        codonw_features (list of str): list of CodonW features to
+            calculate for each gene (as command-line arguments).
     Returns:
         feature_table (pd.DataFrame): table of results with each gene in
             a row and each calculated feature in a column
@@ -171,12 +173,6 @@ if __name__ == "__main__":
         "-g0", dest="GB", required=True,
         help="original GenBank annotation file")
     parser.add_argument(
-        "-d", dest="DEG", required=True,
-        help="")  # TODO
-    parser.add_argument(
-        "-c", dest="CV", required=True,
-        help="")  # TODO
-    parser.add_argument(
         "-n", dest="NPROC", required=True, type=int,
         help="")  # TODO
     parser.add_argument(
@@ -194,11 +190,15 @@ if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
     genbank_id = os.path.splitext(os.path.basename(GENBANK))[0]
     GENBANK_M1 = os.path.join(OUT_DIR, genbank_id + ".gbm1")
-    DEG = args.DEG
-    CV = args.CV
     NPROC = args.NPROC
     ORI = args.ORI
     TER = args.TER
+    GEPTOP_PARAMS = {
+        "deg_path": DEG,
+        "cv_path": CV,
+        "n_proc": NPROC,
+        "out_path": OUT_DIR
+    }
 
     # Check input
     # TODO
@@ -212,14 +212,8 @@ if __name__ == "__main__":
     # TER = 723000  # FIXME
 
     # Get table of all gene features
-    geptop_params = {
-        "deg_path": DEG,
-        "cv_path": CV,
-        "n_proc": NPROC,
-        "out_path": OUT_DIR
-    }
     results = get_feature_table(annotation, OUT_DIR, ORI, TER,
-                                geptop_params, CODONW_FEATURES)
+                                GEPTOP_PARAMS, CODONW_FEATURES)
     results.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
 
     # Load classifier and get essentiality scores
