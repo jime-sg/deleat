@@ -12,6 +12,7 @@ from Bio import SeqIO
 
 
 def is_deletion(feature):
+    """Check whether a GenBank feature is an annotated deletion."""
     if (feature.type == "misc_feature" and
             "note" in feature.qualifiers and
             "deletion" in feature.qualifiers["note"][0]):
@@ -69,6 +70,7 @@ if __name__ == "__main__":
                  "-n", name, "-d1", str(start), "-d2", str(end),
                  "-e", ENZYME, "-L", str(HR_LENGTH)]
             )
+    print("Done.")
 
     # Delete temporary FASTA file
     os.remove(fasta)

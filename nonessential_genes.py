@@ -20,8 +20,6 @@ import geptop
 import codonw
 
 
-# CODONW_FEATURES = ["-enc", "-gc", "-sil_base", "-L_sym", "-L_aa", "-aro",
-#                    "-hyd"]
 CODONW_FEATURES = ["-enc", "-gc", "-L_aa", "-hyd"]
 FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
 CLASSIFIER = os.path.join(os.path.dirname(__file__),
@@ -29,6 +27,14 @@ CLASSIFIER = os.path.join(os.path.dirname(__file__),
 
 
 def find_ori_ter(gb):
+    """Find positions of origin and terminus of replication in a genome,
+    using the cumulative GC skew method.
+
+    Args:
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
+    Returns:
+        ori, ter (int): origin and terminus positions
+    """
     dna = gb.seq
     w = 100
     cum_gcskew = np.cumsum(GC_skew(dna, window=w))
@@ -39,10 +45,25 @@ def find_ori_ter(gb):
 
 
 def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
+    """Calculate features for essentiality prediction for every gene.
+
+    Args:
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
+        out_dir (str): directory for output files
+        ori (int): position of origin of replication
+        ter (int): position of terminus of replication
+        geptop_params (dict of str:str): parameters for essential
+            ortholog mapping
+        codonw_features (list of str): command-line options of CodonW
+            gene features to calculate
+    Returns:
+        feature_table (pd.DataFrame): table of results with each gene in
+            a row and each calculated feature in a column
+    """
     # Extract proteome
     proteome_aa = os.path.join(out_dir, "proteome.faa")
     proteome_nt = os.path.join(out_dir, "proteome.fna")
-    extract_cds(gb_file=gb, out_aa=proteome_aa, out_nt=proteome_nt)
+    extract_cds(gb=gb, out_aa=proteome_aa, out_nt=proteome_nt)
 
     # Strand data
     feature_table = strand(proteome_aa, ori=ori, ter=ter)
@@ -58,11 +79,21 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
     return feature_table
 
 
-def extract_cds(gb_file, out_aa, out_nt):
+def extract_cds(gb, out_aa, out_nt):
+    """Save CDS sequences as multiFASTA, both nucleotide and amino acid.
+
+    For each GenBank feature annotated as a CDS with translation (a
+    non-pseudogenized protein-coding gene), extract the nt and aa
+    sequence and save each in a multiFASTA file, cumulatively. These
+    files are created for downstream analyses.
+    Args:
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
+        out_aa (str): protein sequence multiFASTA file
+        out_nt (str): nucleotide sequence multiFASTA file
+    """
     proteins_aa = []
     proteins_nt = []
-    annot = SeqIO.read(gb_file, "genbank")
-    for feature in annot.features:
+    for feature in gb.features:
         if "essentiality" in feature.qualifiers:
             # Ignore already annotated genes
             continue
@@ -75,7 +106,7 @@ def extract_cds(gb_file, out_aa, out_nt):
                 description=make_description(feature)
             )
             protein_nt = SeqRecord(
-                seq=feature.extract(annot.seq),
+                seq=feature.extract(gb.seq),
                 id=feature.qualifiers["locus_tag"][0],
                 description=make_description(feature)
             )
@@ -86,6 +117,7 @@ def extract_cds(gb_file, out_aa, out_nt):
 
 
 def make_description(feature):
+    """Generate a FASTA header for a sequence."""
     if "product" in feature.qualifiers:
         product = feature.qualifiers["product"][0]
     else:
@@ -96,6 +128,17 @@ def make_description(feature):
 
 
 def strand(proteome, ori, ter):
+    """Determine strand directionality (leading or lagging) of each gene.
+
+    Args:
+        proteome (str): protein sequence multiFASTA file path
+        ori (int): position of origin of replication
+        ter (int): position of terminus of replication
+    Returns:
+        strand_results (pd.DataFrame): table of results with each gene
+            in a row and strand directionality in the only column
+            (encoded as 1 = leading, 0 = lagging)
+    """
     proteins = list(SeqIO.parse(proteome, "fasta"))
     strand_results = pd.DataFrame(
         index=[prot.id for prot in proteins],
@@ -122,7 +165,7 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
         prog="nonessential-genes",
-        description=""  # FIXME
+        description=""  # TODO
     )
     parser.add_argument(
         "-g0", dest="GB", required=True,
@@ -139,7 +182,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
-    # TODO: añadir ORI y TER (opcionales)
+    parser.add_argument(
+        "-p1", dest="ORI",
+        help="")  # TODO
+    parser.add_argument(
+        "-p2", dest="TER",
+        help="")  # TODO
     args, unknown = parser.parse_known_args()
     GENBANK = args.GB
     OUT_DIR = args.OUT_DIR
@@ -149,16 +197,19 @@ if __name__ == "__main__":
     DEG = args.DEG
     CV = args.CV
     NPROC = args.NPROC
+    ORI = args.ORI
+    TER = args.TER
 
     # Check input
     # TODO
 
-    # Get ori + ter coordinates
-    # TODO: condición para calcularlo
     annotation = SeqIO.read(GENBANK, "genbank")
-    ori, ter = find_ori_ter(annotation)
-    # ori = 1581000  # FIXME
-    # ter = 723000  # FIXME
+
+    # Get ori + ter coordinates
+    if not (ORI and TER):
+        ORI, TER = find_ori_ter(annotation)
+    # ORI = 1581000  # FIXME
+    # TER = 723000  # FIXME
 
     # Get table of all gene features
     geptop_params = {
@@ -167,7 +218,7 @@ if __name__ == "__main__":
         "n_proc": NPROC,
         "out_path": OUT_DIR
     }
-    results = get_feature_table(GENBANK, OUT_DIR, ori, ter,
+    results = get_feature_table(annotation, OUT_DIR, ORI, TER,
                                 geptop_params, CODONW_FEATURES)
     results.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
 
