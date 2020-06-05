@@ -201,9 +201,13 @@ if __name__ == "__main__":
     }
 
     # Check input
-    # TODO
+    try:
+        annotation = SeqIO.read(GENBANK, "fasta")
+    except (FileNotFoundError, ValueError):
+        raise SystemExit("\n\terror: could not read annotation file\n")
+    if not all([coord in range(1, len(annotation)+1) for coord in (ORI, TER)]):
+        raise SystemExit("\n\terror: invalid deletion coordinates\n")
 
-    annotation = SeqIO.read(GENBANK, "genbank")
 
     # Get ori + ter coordinates
     if not (ORI and TER):

@@ -8,11 +8,11 @@ import runpy
 
 
 STEPS = [
-    "nonessential-genes",
+    "predict-essentiality",
     "define-deletions",
     "revise-deletions",
     "design-all-primers",
-    "summarize"
+    "summarise"
 ]
 
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     step = argv[1]
     if step not in STEPS:
         if step not in ("-h", "--help"):
-            print("error: unrecognized option '%s'" % step)
+            print("error: unrecognised option '%s'" % step)
         print_usage()
 
     else:
