@@ -84,7 +84,7 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
         cv_path (str): directory containing pre-computed composition
             vectors for DEG reference proteomes.
         cutoff (float): cutoff score for essentiality classification.
-        n_proc (int): number of processes for parallelization.  # FIXME
+        n_proc (int): number of CPUs to use for execution.
         out_path (str): output directory.
     Returns:
         results (dict of str: (float, bool)): essentiality score and
@@ -140,8 +140,8 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
 
     os.rmdir(blast_path)
     remove_blastdb(query_file)
-    print("Done. Normalizing essentiality scores...")
-    scores = normalize(scores)
+    print("Done. Normalising essentiality scores...")
+    scores = normalise(scores)
 
     # Classify genes
     results = {gene.split()[0]: (score, score > cutoff)
@@ -343,7 +343,7 @@ def distance(cv1, cv2):
     c = sum(map(lambda x: x*x, cv2.values()))
     corr = a / sqrt(b * c)
 
-    # Get distance by normalizing to (0, 1)
+    # Get distance by normalising to (0, 1)
     dist = (1 - corr) / 2
     return dist
 
@@ -358,12 +358,12 @@ def is_essential(hit_id):
     return essential
 
 
-def normalize(raw):
-    """Normalize essentiality scores.
+def normalise(raw):
+    """Normalise essentiality scores.
     Args:
         raw (dict of str: float): raw essentiality scores.
     Returns:
-        norm (dict of str: float): normalized essentiality scores.
+        norm (dict of str: float): normalised essentiality scores.
     """
     norm = {}
     s_max = max(raw.values())

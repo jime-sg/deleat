@@ -10,8 +10,8 @@ import shutil
 
 from Bio import SeqIO
 
-from nonessential_genes import (find_ori_ter, get_feature_table,
-                                CODONW_FEATURES)
+from predict_essentiality import (find_ori_ter, get_feature_table,
+                                  CODONW_FEATURES)
 from geptop import ORG_NAMES
 
 DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"  # FIXME
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     annot = SeqIO.read(GENBANK, "genbank")
     ori, ter = find_ori_ter(annot)
 
-    # create dir with all DEG organisms except the one being analyzed
+    # create dir with all DEG organisms except the one being analysed
     deg2 = os.path.join(RESULTS_DIR, "temp")
     shutil.copytree(DEG, deg2)
     if DEG_ID.endswith(("a", "b")):

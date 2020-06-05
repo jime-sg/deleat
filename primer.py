@@ -354,7 +354,7 @@ def choose(primer_dict, global_seq, enz):
     """
     n_pairs = len(primer_dict[1])//2
     combinations = list(product(range(n_pairs), repeat=2))
-    # Prioritize primer pair quality = minimize sum of primer pair indexes
+    # Prioritise primer pair quality = minimise sum of primer pair indexes
     combinations.sort(key=lambda x: x[0]+x[1])
     i = 0
     sizediff_ok = False

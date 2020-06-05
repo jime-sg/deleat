@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""summarize.py
+"""summarise.py
 # TODO
 @author: Jimena Solana
 """
