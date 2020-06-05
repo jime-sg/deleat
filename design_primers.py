@@ -115,6 +115,7 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     GENOME = args.GENOME
     OUT_DIR = args.OUT_DIR
+    os.makedirs(OUT_DIR, exist_ok=True)
     DEL_COORDS = (args.DEL_START, args.DEL_END)
     DEL_NAME = args.DEL_NAME
     HR_LENGTH = args.HR_LENGTH
@@ -132,10 +133,8 @@ if __name__ == "__main__":
         enzyme = AllEnzymes.get(ENZYME)
     else:
         raise SystemExit("\n\terror: restriction enzyme not found\t")
-    try:
-        log = open(os.path.join(OUT_DIR, DEL_NAME + "_primer_design.txt"), "w")
-    except FileNotFoundError:
-        raise SystemExit("\n\terror: could not find output directory\n")
+
+    log = open(os.path.join(OUT_DIR, DEL_NAME + "_primer_design.txt"), "w")
 
     # Define initial regions
     del_region = Region(DEL_COORDS, genome)
