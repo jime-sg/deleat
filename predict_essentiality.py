@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""nonessential_genes.py
-# TODO
+"""predict_essentiality.py
+
+    Get predicted essentiality scores for all genes in a bacterial
+    genome.
+
 @author: Jimena Solana
 """
 
@@ -33,9 +36,9 @@ def find_ori_ter(gb):
     using the cumulative GC skew method.
 
     Args:
-        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation.
     Returns:
-        ori, ter (int): origin and terminus positions
+        ori, ter (int): origin and terminus positions.
     """
     dna = gb.seq
     w = 100
@@ -50,17 +53,17 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
     """Calculate features for essentiality prediction for every gene.
 
     Args:
-        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
-        out_dir (str): directory for output files
-        ori (int): position of origin of replication
-        ter (int): position of terminus of replication
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation.
+        out_dir (str): directory for output files.
+        ori (int): position of origin of replication.
+        ter (int): position of terminus of replication.
         geptop_params (dict of str:str): parameters for essential
-            ortholog mapping
+            ortholog mapping.
         codonw_features (list of str): list of CodonW features to
             calculate for each gene (as command-line arguments).
     Returns:
         feature_table (pd.DataFrame): table of results with each gene in
-            a row and each calculated feature in a column
+            a row and each calculated feature in a column.
     """
     # Extract proteome
     proteome_aa = os.path.join(out_dir, "proteome.faa")
@@ -85,13 +88,13 @@ def extract_cds(gb, out_aa, out_nt):
     """Save CDS sequences as multiFASTA, both nucleotide and amino acid.
 
     For each GenBank feature annotated as a CDS with translation (a
-    non-pseudogenized protein-coding gene), extract the nt and aa
+    non-pseudogenised protein-coding gene), extract the nt and aa
     sequence and save each in a multiFASTA file, cumulatively. These
     files are created for downstream analyses.
     Args:
-        gb (Bio.SeqRecord.SeqRecord): GenBank annotation
-        out_aa (str): protein sequence multiFASTA file
-        out_nt (str): nucleotide sequence multiFASTA file
+        gb (Bio.SeqRecord.SeqRecord): GenBank annotation.
+        out_aa (str): protein sequence multiFASTA file.
+        out_nt (str): nucleotide sequence multiFASTA file.
     """
     proteins_aa = []
     proteins_nt = []
@@ -133,13 +136,13 @@ def strand(proteome, ori, ter):
     """Determine strand directionality (leading or lagging) of each gene.
 
     Args:
-        proteome (str): protein sequence multiFASTA file path
-        ori (int): position of origin of replication
-        ter (int): position of terminus of replication
+        proteome (str): protein sequence multiFASTA file path.
+        ori (int): position of origin of replication.
+        ter (int): position of terminus of replication.
     Returns:
         strand_results (pd.DataFrame): table of results with each gene
             in a row and strand directionality in the only column
-            (encoded as 1 = leading, 0 = lagging)
+            (encoded as 1 = leading, 0 = lagging).
     """
     proteins = list(SeqIO.parse(proteome, "fasta"))
     strand_results = pd.DataFrame(
@@ -163,27 +166,41 @@ def strand(proteome, ori, ter):
     return strand_results
 
 
+def colour(ess_score):
+    """Encode essentiality score as a colour."""
+    if ess_score >= 0.75:
+        col = "033 217 033"  # green
+    elif ess_score >= 0.5:
+        col = "255 247 000"  # yellow
+    elif ess_score >= 0.25:
+        col = "255 149 000"  # orange
+    else:
+        col = "237 026 026"  # red
+    return col
+
+
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
-        prog="nonessential-genes",
-        description=""  # TODO
+        prog="predict-essentiality",
+        description="Get predicted essentiality scores for all genes in a "
+                    "bacterial genome"
     )
     parser.add_argument(
-        "-g0", dest="GB", required=True,
+        "-g", dest="GB", required=True,
         help="original GenBank annotation file")
-    parser.add_argument(
-        "-n", dest="NPROC", required=True, type=int,
-        help="")  # TODO
     parser.add_argument(
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
     parser.add_argument(
         "-p1", dest="ORI",
-        help="")  # TODO
+        help="position of origin of replication")
     parser.add_argument(
         "-p2", dest="TER",
-        help="")  # TODO
+        help="position of terminus of replication")
+    parser.add_argument(
+        "-n", dest="NPROC", required=True, type=int,
+        help="number of CPUs to use for execution")
     args, unknown = parser.parse_known_args()
     GENBANK = args.GB
     OUT_DIR = args.OUT_DIR
@@ -202,34 +219,37 @@ if __name__ == "__main__":
 
     # Check input
     try:
-        annotation = SeqIO.read(GENBANK, "fasta")
+        annotation = SeqIO.read(GENBANK, "genbank")
     except (FileNotFoundError, ValueError):
         raise SystemExit("\n\terror: could not read annotation file\n")
-    if not all([coord in range(1, len(annotation)+1) for coord in (ORI, TER)]):
-        raise SystemExit("\n\terror: invalid deletion coordinates\n")
-
+    if ORI and TER:
+        if not all([coord in range(1, len(annotation)+1)
+                    for coord in (ORI, TER)]):
+            raise SystemExit("\n\terror: invalid ori/ter coordinates\n")
 
     # Get ori + ter coordinates
     if not (ORI and TER):
         ORI, TER = find_ori_ter(annotation)
-    # ORI = 1581000  # FIXME
-    # TER = 723000  # FIXME
 
     # Get table of all gene features
-    results = get_feature_table(annotation, OUT_DIR, ORI, TER,
-                                GEPTOP_PARAMS, CODONW_FEATURES)
-    results.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
+    feature_table = get_feature_table(annotation, OUT_DIR, ORI, TER,
+                                      GEPTOP_PARAMS, CODONW_FEATURES)
+    feature_table.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
 
     # Load classifier and get essentiality scores
     classifier = load(CLASSIFIER)
-    X_target = results[FEATURES].values
+    X_target = feature_table[FEATURES].values
     preprocess = Pipeline([
         ("imputation", classifier.named_steps["imputation"]),
         ("scaling", classifier.named_steps["scaling"])
     ])
     X_target = preprocess.fit(X_target).transform(X_target)  # Impute + scale
-    y_probs = classifier.predict_proba(X_target)
-    essentiality_scores = dict(zip(results.index, y_probs))
+    y_probs = classifier.predict_proba(X_target)[:, 0]
+    essentiality_scores = dict(zip(feature_table.index, y_probs))
+    essentiality_table = pd.DataFrame(list(essentiality_scores.items()),
+                                      columns=["locus_tag", "ess_score"])
+    essentiality_table.to_csv(os.path.join(OUT_DIR, "essentiality_table.csv"),
+                              index=False)
 
     # Create modified-I GenBank file
     for gene in annotation.features:
@@ -241,8 +261,11 @@ if __name__ == "__main__":
                 continue
             locus_tag = gene.qualifiers["locus_tag"][0]
             gene.qualifiers["essentiality"] = essentiality_scores[locus_tag]
+            gene.qualifiers["colour"] = colour(essentiality_scores[locus_tag])
         elif gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
             gene.qualifiers["essentiality"] = 1
+            gene.qualifiers["colour"] = colour(1)
         elif gene.type == "CDS":  # pseudo-gene
             gene.qualifiers["essentiality"] = 0
+            gene.qualifiers["colour"] = colour(0)
     SeqIO.write(annotation, GENBANK_M1, "genbank")
