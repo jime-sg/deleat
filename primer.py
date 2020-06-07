@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """primer.py
-# TODO
+
+    Classes and functions for primer design, using Primer3-py.
+
 @author: Jimena Solana
 """
 
@@ -131,7 +133,9 @@ class PrimerSet:
              primer_dict (dict of str:primers.Primer): dictionary of 1F,
                 1R, 2F and 2R primers.
              global_seq (Bio.Seq.Seq): template sequence.
-             enz  # TODO
+             enz (Bio.Restriction.Restriction.RestrictionType):
+                restriction enzyme used in the experiment, which must
+                not have any target on the megapriming product.
         """
         self.enz = enz
         self.PCR1F = primer_dict["1F"]
@@ -324,9 +328,6 @@ def write_pairs(primer_dict):
         lp = primer_dict["LEFT_%d" % n]
         rp = primer_dict["RIGHT_%d" % n]
         prod_size = rp.e() - lp.s() + 1
-        # with open("/home/jimena/Escritorio/product_lengths.txt", "a") as f:  # FIXME
-        #     f.write(str(prod_size) + "\n")
-
         results_str += (
                 "%d\t%d\t%d-%d..%d-%d\t%-24s\t%-24s\t%.1f\t%.1f\n"
                 % (n+1, prod_size, lp.s(), lp.e(), rp.s(), rp.e(),
@@ -382,9 +383,6 @@ def choose(primer_dict, global_seq, enz):
             sizediff_ok = False
         else:
             cut_ok = True
-
-    # with open("/home/jimena/Escritorio/product_diffs.txt", "a") as f:  # FIXME
-    #     f.write(str(size_diff) + "\n")
     return primer_set
 
 
@@ -415,4 +413,3 @@ def get_name(del_name, primer_id, design_n, primer_n, enz):
             primer = "%s-R" % str(enz)
     primer_name = "%s.%d%d_%s%d" % (del_name, pcr, design_n, primer, primer_n)
     return primer_name
-
