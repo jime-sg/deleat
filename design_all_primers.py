@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """design_all_primers.py
-# TODO
+
+    Design primers for deletion by megapriming of each proposed region.
+
 @author: Jimena Solana
 """
 

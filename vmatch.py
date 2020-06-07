@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""
-# TODO
+"""vmatch.py
+
+    Interface for running Vmatch with command-line options and parsing
+    results.
+
 @author: Jimena Solana
 """
 

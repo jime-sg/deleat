@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""
-# TODO
+"""pycircos.py
+
+    Python Matplotlib-based circular genome visualization tool.
+
 @author: Mori Hideto (github.com/ponnhide)
 """
 

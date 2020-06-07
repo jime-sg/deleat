@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """region.py
-# TODO
+
+    Manage subsequence basic properties.
+
 @author: Jimena Solana
 """
 
@@ -59,7 +61,7 @@ class Region:
 
     def shift_past(self, position, direction):
         """Shift the region's location beyond a given position.
-        
+
         The new location can be placed exactly to the left or to the
         right of the given position, so that the region does not overlap
         it.

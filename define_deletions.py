@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """define_deletions.py
-# TODO
+
+    Compute a list of proposed deletions according to predicted
+    essentiality scores.
+
 @author: Jimena Solana
 """
 
@@ -134,7 +137,7 @@ def make_table(deletions, gb_m1):
                  "contains (pseudo/hypot/non-hypot)"]
     )
     for n, deletion in enumerate(deletions.parts):
-        table.iloc[n, 0] = deletion.start + 1  # 0-based -> 1-based
+        table.iloc[n, 0] = deletion.start + 1  # 0-based > 1-based
         table.iloc[n, 1] = deletion.end
         length = deletion.end - deletion.start
         table.iloc[n, 2] = length
@@ -198,6 +201,7 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     GENBANK_M1 = args.GBM1
     OUT_DIR = args.OUT_DIR
+    os.makedirs(OUT_DIR, exist_ok=True)
     genbank_id = os.path.splitext(os.path.basename(GENBANK_M1))[0]
     GENBANK_M2 = os.path.join(OUT_DIR, genbank_id + ".gbm2")
     OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
@@ -205,12 +209,26 @@ if __name__ == "__main__":
     E = args.ESS_THRESHOLD
 
     # Check input
-    # TODO
-
-    annotation = SeqIO.read(GENBANK_M1, "genbank")
+    try:
+        annotation = SeqIO.read(GENBANK_M1, "genbank")
+    except (FileNotFoundError, ValueError):
+        raise SystemExit("\n\terror: could not read annotation file\n")
+    try:
+        for gene in annotation.features:
+            if gene.type == "CDS":
+                _ = gene.qualifiers["essentiality"][0]
+                break
+    except KeyError:
+        raise SystemExit("\n\terror: invalid GenBank file (must be .gbm1)\n")
+    if E < 0 or E > 1:
+        raise SystemExit("\n\terror: invalid ESS_THRESHOLD")
+    if L < 1 or L > len(annotation):
+        raise SystemExit("\n\terror: invalid DEL_LENGTH")
 
     # Define deletions
+    print("Computing deletion list...")
     proposed_deletions = get_deletions(annotation, L, E)
     save_genbank_m2(proposed_deletions, annotation, GENBANK_M2)
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
+    print("Done.")

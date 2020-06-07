@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """circplot.py
-# TODO
+
+    Create a circular genome plot comparing a genome and its reduced
+    version.
+
 @author: Jimena Solana
 """
 
 from Bio import SeqIO
 
 import pycircos
+from design_all_primers import is_deletion
 
 
 COLORS = {
@@ -24,11 +28,17 @@ RNA_H = 20
 GC_H = 60
 SPACE = 80
 DELETION_H = 50
-DELETION_REQ = (lambda x: "note" in x.qualifiers and
-                          "deletion" in x.qualifiers["note"][0])
 
 
 def plot(gb_outer, gb_inner, out_file, out_fmt):
+    """Plot the original and reduced genomes.
+
+    Args:
+        gb_outer (str): modified-III GenBank file path.
+        gb_inner (str): modified-IV GenBank file path.
+        out_file (str): output file path.
+        out_fmt (str): output file format.
+    """
     y = 900
     genome = pycircos.Genome()
     print("Drawing original genome...")
@@ -91,10 +101,9 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
     genome.plot_feature(
         feat_type="misc_feature",
         bottom=y, height=h,
-        requirement=DELETION_REQ,
+        requirement=is_deletion,
         color=COLORS["ner"]
     )
-    # TODO: más features que mostrar
     print("Drawing reduced genome...")
     # INNER: circle
     h = 2
