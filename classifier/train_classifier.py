@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """train_classifier.py
-# TODO
+
+    Train a logistic regression classifier with gene feature data from
+    reference organisms.
+
 @author: Jimena Solana
 """
 

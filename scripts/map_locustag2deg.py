@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """map_locustag2deg.py
-# TODO
+
+    Map locus_tag protein ids to their corresponding DEG ids by BLAST
+    search.
+
 @author: Jimena Solana
 """
 

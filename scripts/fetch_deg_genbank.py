@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""
-# TODO
+"""fetch_deg_genbank.py
+
+    Download GenBank annotation files for each DEG reference organism.
+
 @author: Jimena Solana
 """
 

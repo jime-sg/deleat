@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """format_deg.py
+
+    Restructure DEG datasets into three files per organism: one
+    containing essential genes, one non-essential, and one all of them.
+
 @author: Jimena Solana
 """
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """extract_features.py
-# TODO
+
+    Compute gene feature table for a reference organism.
+
 @author: Jimena Solana
 """
 
@@ -14,9 +16,9 @@ from predict_essentiality import (find_ori_ter, get_feature_table,
                                   CODONW_FEATURES)
 from geptop import ORG_NAMES
 
-DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"  # FIXME
-CV = "/home/jimena/Bartonella/DEGdb/cv"  # FIXME
-RESULTS_DIR = "/home/jimena/Bartonella/ge_classifier/features"  # FIXME
+DEG = os.path.join(os.path.dirname(__file__), "data/deg")
+CV = os.path.join(os.path.dirname(__file__), "data/cv")
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "classifier/features")
 
 
 if __name__ == "__main__":

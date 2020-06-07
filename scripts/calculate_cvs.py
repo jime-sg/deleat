@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""
+"""calculate_cvs.py
+
+    Calculate proteome composition vector for all DEG reference
+    organisms, according to the algorithm by Qi et al. 2004 'Whole
+    Proteome Prokaryote Phylogeny Without Sequence Alignment: A K-String
+    Composition Approach'.
+
 @author: Jimena Solana
 """
 

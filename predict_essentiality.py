@@ -25,8 +25,8 @@ import codonw
 
 CODONW_FEATURES = ["-enc", "-gc", "-L_aa", "-hyd"]
 FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
-DEG = "/home/jimena/Bartonella/DEGdb/deg_byorg/all"  # FIXME
-CV = "/home/jimena/Bartonella/DEGdb/cv"  # FIXME
+DEG = os.path.join(os.path.dirname(__file__), "data/deg")
+CV = os.path.join(os.path.dirname(__file__), "data/cv")
 CLASSIFIER = os.path.join(os.path.dirname(__file__),
                           "classifier/classifier.joblib")
 
