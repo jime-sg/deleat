@@ -166,19 +166,6 @@ def strand(proteome, ori, ter):
     return strand_results
 
 
-def colour(ess_score):
-    """Encode essentiality score as a colour."""
-    if ess_score >= 0.75:
-        col = "033 217 033"  # green
-    elif ess_score >= 0.5:
-        col = "255 247 000"  # yellow
-    elif ess_score >= 0.25:
-        col = "255 149 000"  # orange
-    else:
-        col = "237 026 026"  # red
-    return col
-
-
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
@@ -261,11 +248,8 @@ if __name__ == "__main__":
                 continue
             locus_tag = gene.qualifiers["locus_tag"][0]
             gene.qualifiers["essentiality"] = essentiality_scores[locus_tag]
-            gene.qualifiers["colour"] = colour(essentiality_scores[locus_tag])
         elif gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
             gene.qualifiers["essentiality"] = 1
-            gene.qualifiers["colour"] = colour(1)
         elif gene.type == "CDS":  # pseudo-gene
             gene.qualifiers["essentiality"] = 0
-            gene.qualifiers["colour"] = colour(0)
     SeqIO.write(annotation, GENBANK_M1, "genbank")
