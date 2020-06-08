@@ -12,15 +12,7 @@ import subprocess
 
 from Bio import SeqIO
 
-
-def is_deletion(feature):
-    """Check whether a GenBank feature is an annotated deletion."""
-    if (feature.type == "misc_feature" and
-            "note" in feature.qualifiers and
-            "deletion" in feature.qualifiers["note"][0]):
-        return True
-    else:
-        return False
+from revise_deletions import is_deletion
 
 
 if __name__ == "__main__":

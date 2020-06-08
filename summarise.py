@@ -13,10 +13,19 @@ from Bio.SeqRecord import SeqRecord
 
 import circplot
 from define_deletions import complementary_compoundloc
-from design_all_primers import is_deletion
+from revise_deletions import is_deletion
 
 
 def save_genbank_m4(gb_m3, gb_m4):
+    """
+    # TODO
+    Args:
+        gb_m3:
+        gb_m4:
+
+    Returns:
+
+    """
     annot = SeqIO.read(gb_m3, "genbank")
     deletions = []
     for feature in annot.features:
@@ -47,7 +56,7 @@ def save_genbank_m4(gb_m3, gb_m4):
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
-        prog="summarize",
+        prog="summarise",
         description=""  # FIXME
     )
     parser.add_argument(
@@ -59,6 +68,7 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     GENBANK_M3 = args.GBM3
     OUT_DIR = args.OUT_DIR
+    os.makedirs(OUT_DIR, exist_ok=True)
     genbank_id = os.path.splitext(os.path.basename(GENBANK_M3))[0]
     GENBANK_M4 = os.path.join(OUT_DIR, genbank_id + ".gbm4")
     OUT_IMG = os.path.join(OUT_DIR, "genome_reduction")
