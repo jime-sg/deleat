@@ -24,15 +24,17 @@ def get_deletions(gb_m1, l, e):
     A deletion is defined as any region longer than (or equal to) L not
     containing any gene with essentiality score higher than E.
     Args:
-        gb_m1 (Bio.SeqRecord.SeqRecord): GenBank annotation
-        l (int): minimum deletion length
-        e (float): gene essentiality threshold
+        gb_m1 (Bio.SeqRecord.SeqRecord): GenBank annotation.
+        l (int): minimum deletion length.
+        e (float): gene essentiality threshold.
     Returns:
         deletions (Bio.SeqFeature.CompoundLocation): list of proposed
-            deletions
+            deletions.
     """
     essential_genes = [gene for gene in gb_m1.features
                        if is_essential(gene, e)]
+    print("Essential gene count with threshold %.3f: %d"
+          % (e, len(essential_genes)))
     essential_regions = CompoundLocation([
         FeatureLocation(gene.location.start - NONCODING_MARGIN,
                         gene.location.end + NONCODING_MARGIN)
@@ -49,7 +51,7 @@ def get_deletions(gb_m1, l, e):
 
 def is_essential(feature, threshold):
     """Check whether a gene is essential."""
-    if (feature.type == "CDS" and
+    if ("essentiality" in feature.qualifiers and
             float(feature.qualifiers["essentiality"][0]) > threshold):
         essential = True
     else:
@@ -62,10 +64,10 @@ def merge_overlaps(comploc):
 
     Args:
         comploc (Bio.SeqFeature.CompoundLocation): initial
-            CompoundLocation
+            CompoundLocation.
     Returns:
         comploc_merged (Bio.SeqFeature.CompoundLocation):
-            CompoundLocation without any overlapping parts
+            CompoundLocation without any overlapping parts.
     """
     parts = [comploc.parts[0]]
     for current in comploc.parts:
@@ -82,13 +84,13 @@ def complementary_compoundloc(start, end, comploc):
     """Get the complementary of a CompoundLocation (opposite parts).
 
     Args:
-        start (int): start position of the genome
-        end (int): end position of the genome
+        start (int): start position of the genome.
+        end (int): end position of the genome.
         comploc (Bio.SeqFeature.CompoundLocation): original
-            CompoundLocation
+            CompoundLocation.
     Returns:
         complementary (Bio.SeqFeature.CompoundLocation): complementary
-            CompoundLocation
+            CompoundLocation.
     """
     complementary = FeatureLocation(start, comploc.parts[0].start)
     for i in range(len(comploc.parts) - 1):
@@ -108,9 +110,9 @@ def save_genbank_m2(deletions, gb_m1, gb_m2):
     """Generate modified-II GenBank file with annotated deletions.
 
     Args:
-        deletions (Bio.SeqFeature.CompoundLocation): list of deletions
-        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
-        gb_m2 (str): modified-II GenBank file path
+        deletions (Bio.SeqFeature.CompoundLocation): list of deletions.
+        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation.
+        gb_m2 (str): modified-II GenBank file path.
     """
     for n, deletion in enumerate(deletions.parts):
         deletion_feature = SeqFeature(
@@ -126,10 +128,10 @@ def make_table(deletions, gb_m1):
     """Generate a summary table of deletion statistics.
 
     Args:
-        deletions (Bio.SeqFeature.CompoundLocation): list of deletions
-        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
+        deletions (Bio.SeqFeature.CompoundLocation): list of deletions.
+        gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation.
     Returns:
-        table (pd.DataFrame): table of deletion statistics
+        table (pd.DataFrame): table of deletion statistics.
     """
     table = pd.DataFrame(
         index=["D%d" % (n+1) for n in range(len(deletions.parts))],
@@ -153,10 +155,10 @@ def gene_content(deletion, annot):
     annotated as "hypothetical protein" and genes with functional
     annotation.
     Args:
-        deletion (Bio.SeqFeature.FeatureLocation): a deletion
-        annot (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation
+        deletion (Bio.SeqFeature.FeatureLocation): a deletion.
+        annot (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation.
     Returns:
-        result (str): gene contents (pseudo/hypot/non-hypot)
+        result (str): gene contents (pseudo/hypot/non-hypot).
     """
     genes = {"pseudo": 0, "hypot": 0, "non-hypot": 0}
     for gene in annot.features:
