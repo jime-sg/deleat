@@ -106,20 +106,24 @@ def complementary_compoundloc(start, end, comploc):
     return complementary
 
 
-def save_genbank_m2(deletions, gb_m1, gb_m2):
+def save_genbank_m2(deletions, gb_m1, gb_m2, l, e):
     """Generate modified-II GenBank file with annotated deletions.
 
     Args:
         deletions (Bio.SeqFeature.CompoundLocation): list of deletions.
         gb_m1 (Bio.SeqRecord.SeqRecord): modified-I GenBank annotation.
         gb_m2 (str): modified-II GenBank file path.
+        l (int): minimum deletion length.
+        e (float): gene essentiality threshold.
     """
     for n, deletion in enumerate(deletions.parts):
         deletion_feature = SeqFeature(
             location=deletion,
             type="misc_feature"
         )
-        deletion_feature.qualifiers["note"] = ["deletion D%s" % (n+1)]
+        deletion_feature.qualifiers["note"] = ["deletion D%s" % (n+1),
+                                               "L=%d" % l,
+                                               "E=%.3f" %e]
         gb_m1.features.append(deletion_feature)
     SeqIO.write(gb_m1, gb_m2, "genbank")
 
@@ -230,7 +234,7 @@ if __name__ == "__main__":
     # Define deletions
     print("Computing deletion list...")
     proposed_deletions = get_deletions(annotation, L, E)
-    save_genbank_m2(proposed_deletions, annotation, GENBANK_M2)
+    save_genbank_m2(proposed_deletions, annotation, GENBANK_M2, L, E)
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
     print("Done.")

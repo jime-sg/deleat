@@ -55,9 +55,14 @@ def save_genbank_m3(deletions, names, gb_m2, gb_m3):
     """
     # Delete previous proposed deletions
     features_nodel = []
+    l = 0
+    e = 0
     for feature in gb_m2.features:
         if not is_deletion(feature):
             features_nodel.append(feature)
+        elif not (l and e):
+            l = int(feature.qualifiers["note"][1].split("=")[-1])
+            e = float(feature.qualifiers["note"][2].split("=")[-1])
     gb_m2.features = features_nodel
     # Add revised deletions
     for n, deletion in enumerate(deletions.parts):
@@ -65,7 +70,9 @@ def save_genbank_m3(deletions, names, gb_m2, gb_m3):
             location=deletion,
             type="misc_feature"
         )
-        deletion_feature.qualifiers["note"] = ["deletion %s" % (names[n])]
+        deletion_feature.qualifiers["note"] = ["deletion %s" % (names[n]),
+                                               "L=%d" % l,
+                                               "E=%.3f" % e]
         gb_m2.features.append(deletion_feature)
     SeqIO.write(gb_m2, gb_m3, "genbank")
 
