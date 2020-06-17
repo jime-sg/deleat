@@ -14,7 +14,7 @@ import numpy as np
 
 import circplot
 from predict_essentiality import find_ori_ter
-from define_deletions import complementary_compoundloc
+from define_deletions import complementary_compoundloc, is_essential
 from revise_deletions import is_deletion
 
 
@@ -51,11 +51,11 @@ def best_deletion_order(gb_m3, ori, ter, log):
     with open(log, "w") as f:
         f.write("Initial replichore imbalance: %d\n" % imbalance)
         f.write("Best deletion order for keeping the minimum possible "
-                  "imbalance at each step:\n")
+                "imbalance at each step:\n")
         while deletions:
             best = deletions.pop(
                 np.argmin([abs(imbalance + deletion[1])
-                for deletion in deletions])
+                           for deletion in deletions])
             )
             imbalance += best[1]
             f.write("  %s -> imbalance = %d\n" % (best[0], imbalance))
@@ -97,6 +97,117 @@ def save_genbank_m4(gb_m3, gb_m4):
     SeqIO.write(reduced_annot, gb_m4, "genbank")
 
 
+def get_stats(gb_m3):
+    """
+    # TODO
+    Args:
+        gb_m3:
+
+    Returns:
+
+    """
+    l = 0
+    e = 0
+    deletions = []
+    for feature in gb_m3.features:
+        if is_deletion(feature):
+            deletions.append(feature.location)
+            if not (l and e):
+                l = int(feature.qualifiers["note"][1].split("=")[-1])
+                e = float(feature.qualifiers["note"][2].split("=")[-1])
+    deletions = CompoundLocation(deletions)
+    stats = {
+        "org": gb_m3.annotations["organism"],
+        "size": len(gb_m3),
+        "l": l,
+        "e": e,
+        "del_n": 0,
+        "del_kb": 0,
+        "del_perc": 0,
+        "del_genes_pseudo": 0,
+        "del_genes_hypot": 0,
+        "del_genes_nonhypot": 0,
+        "ess_genes_rna": 0,
+        "ess_genes_hypot": 0,
+        "ess_genes_nonhypot": 0,
+        "ness_genes_pseudo": 0,
+        "ness_genes_hypot": 0,
+        "ness_genes_nonhypot": 0
+    }
+    for feature in gb_m3.features:
+        if is_essential(feature, e):  # essential
+            if feature.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
+                stats["ess_genes_rna"] += 1
+            elif feature.type == "CDS":
+                if ("product" in feature.qualifiers and
+                        "hypothetical" in feature.qualifiers["product"][0]):
+                    stats["ess_genes_hypot"] += 1
+                else:
+                    stats["ess_genes_nonhypot"] += 1
+        elif feature.type == "CDS":  # non-essential
+            if "pseudo" in feature.qualifiers:
+                stats["ness_genes_pseudo"] += 1
+            elif ("product" in feature.qualifiers and
+                  "hypothetical" in feature.qualifiers["product"][0]):
+                stats["ness_genes_hypot"] += 1
+            else:
+                stats["ness_genes_nonhypot"] += 1
+            if (feature.location.start in deletions or
+                    feature.location.end in deletions):  # in a deletion
+                if "pseudo" in feature.qualifiers:
+                    stats["del_genes_pseudo"] += 1
+                elif ("product" in feature.qualifiers and
+                      "hypothetical" in feature.qualifiers["product"][0]):
+                    stats["del_genes_hypot"] += 1
+                else:
+                    stats["del_genes_nonhypot"] += 1
+        elif is_deletion(feature):
+            stats["del_n"] += 1
+            stats["del_kb"] += len(feature) / 1000
+            stats["del_perc"] += len(feature) / len(gb_m3) * 100
+    return stats
+
+
+def write_stats(stats, log):
+    sep = "-" * 80 + "\n"
+    with open(log, "w") as f:
+        f.write(sep)
+        f.write(
+            "##### GENOME REDUCTION REPORT FOR %s (%d bp) #####\n"
+            % (stats["org"], stats["size"])
+        )
+        f.write(sep)
+        f.write(
+            "Deletion design parameters:\n  L = %d\n  E = %.3f\n\n"
+            % (stats["l"], stats["e"])
+        )
+        f.write(
+            ("Predicted essential genes:\n"
+             "  total %d\n  RNA %d\n  hypothetical %d\n  annotated %d\n\n")
+            % (stats["ess_genes_rna"]
+               + stats["ess_genes_hypot"]
+               + stats["ess_genes_nonhypot"],
+               stats["ess_genes_rna"],
+               stats["ess_genes_hypot"],
+               stats["ess_genes_nonhypot"])
+        )
+        f.write(
+            ("Predicted non-essential genes:\n"
+             "  total %d\n  pseudo %d\n  hypothetical %d\n  annotated %d\n\n")
+            % (stats["ness_genes_pseudo"]
+               + stats["ness_genes_hypot"]
+               + stats["ness_genes_nonhypot"],
+               stats["ness_genes_pseudo"],
+               stats["ness_genes_hypot"],
+               stats["ness_genes_nonhypot"])
+        )
+        f.write(
+            "Designed deletions:\n  total %d\n  %d kb\n  %.2f %% of genome\n"
+            % (stats["del_n"], stats["del_kb"], stats["del_perc"])
+        )
+        f.write(sep)
+
+
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
@@ -123,6 +234,7 @@ if __name__ == "__main__":
     GENBANK_M4 = os.path.join(OUT_DIR, genbank_id + ".gbm4")
     ORDER_LOG = os.path.join(OUT_DIR, "deletion_order.txt")
     OUT_IMG = os.path.join(OUT_DIR, "genome_reduction")
+    REPORT_LOG = os.path.join(OUT_DIR, "reduction_stats.txt")
     ORI = args.ORI
     TER = args.TER
 
@@ -137,12 +249,14 @@ if __name__ == "__main__":
 
     # Draw circular genome plot
     save_genbank_m4(genbank_m3, GENBANK_M4)
-
     circplot.plot(
         gb_outer=GENBANK_M3,
         gb_inner=GENBANK_M4,
         out_file=OUT_IMG,
         out_fmt="png"
     )
+    os.remove(GENBANK_M4)
 
-    # TODO: remove reduced gb
+    # Final report
+    reduction_stats = get_stats(genbank_m3)
+    write_stats(reduction_stats, REPORT_LOG)
