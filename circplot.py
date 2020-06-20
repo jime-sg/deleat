@@ -15,10 +15,10 @@ from design_all_primers import is_deletion
 
 COLORS = {
     "circle": "#7c00ff",
-    "pos": "#a9ff8a",
-    "neg": "#ff8a8a",
-    "gp": "#9d78ff",
-    "gm": "#ffd94d",
+    "pos": "#c9ebff",
+    "neg": "#fff08c",
+    "gp": "#b174f7",
+    "gm": "#91f76f",
     "rt": "#000000",
     "rr": "#517c8c",
     "ner": "#eb0000"
@@ -51,7 +51,7 @@ def plot(gb_outer, gb_inner, out_file, out_fmt):
         color_list=[COLORS["circle"]]
     )
     # OUTER: ticks
-    genome.plot_ticks(bottom=y + 6, height=20, space=100000)
+    genome.plot_ticks(bottom=y + 6, height=20, space=100000, labels=True)
     # + strand genes
     print("  Genes...")
     h = GENE_H
