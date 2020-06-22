@@ -28,7 +28,7 @@ FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
 DEG = os.path.join(os.path.dirname(__file__), "data/deg")
 CV = os.path.join(os.path.dirname(__file__), "data/cv")
 CLASSIFIER = os.path.join(os.path.dirname(__file__),
-                          "classifier/classifier.joblib")
+                          "classifier/classifier_rebalanced.joblib")  # FIXME
 
 
 def find_ori_ter(gb):
@@ -71,17 +71,17 @@ def get_feature_table(gb, out_dir, ori, ter, geptop_params, codonw_features):
     extract_cds(gb=gb, out_aa=proteome_aa, out_nt=proteome_nt)
 
     # Strand data
-    feature_table = strand(proteome_aa, ori=ori, ter=ter)
+    feat_table = strand(proteome_aa, ori=ori, ter=ter)
 
     # Geptop scores
     geptop_results = geptop.run(query_file=proteome_aa, **geptop_params)
     for gene, score in geptop_results.items():
-        feature_table.loc[gene, "geptop"] = score[0]
+        feat_table.loc[gene, "geptop"] = score[0]
 
     # CodonW features
     codonw_results = codonw.run(proteome_nt, codonw_features)
-    feature_table = feature_table.join(codonw_results)
-    return feature_table
+    feat_table = feat_table.join(codonw_results)
+    return feat_table
 
 
 def extract_cds(gb, out_aa, out_nt):
@@ -166,6 +166,19 @@ def strand(proteome, ori, ter):
     return strand_results
 
 
+def get_essentiality_scores(feat_table, features, classifier):
+    classifier = load(classifier)
+    X_target = feat_table[features].values
+    preprocess = Pipeline([
+        ("imputation", classifier.named_steps["imputation"]),
+        ("scaling", classifier.named_steps["scaling"])
+    ])
+    X_target = preprocess.fit(X_target).transform(X_target)  # Impute + scale
+    y_probs = classifier.predict_proba(X_target)[:, 0]
+    ess_scores = dict(zip(feat_table.index, y_probs))
+    return ess_scores
+
+
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
@@ -180,10 +193,10 @@ if __name__ == "__main__":
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
     parser.add_argument(
-        "-p1", dest="ORI",
+        "-p1", dest="ORI", type=int,
         help="position of origin of replication")
     parser.add_argument(
-        "-p2", dest="TER",
+        "-p2", dest="TER", type=int,
         help="position of terminus of replication")
     parser.add_argument(
         "-n", dest="NPROC", required=True, type=int,
@@ -192,6 +205,8 @@ if __name__ == "__main__":
     GENBANK = args.GB
     OUT_DIR = args.OUT_DIR
     os.makedirs(OUT_DIR, exist_ok=True)
+    OUT_FEATTABLE = os.path.join(OUT_DIR, "feature_table.csv")
+    OUT_ESSTABLE = os.path.join(OUT_DIR, "essentiality_table.csv")
     genbank_id = os.path.splitext(os.path.basename(GENBANK))[0]
     GENBANK_M1 = os.path.join(OUT_DIR, genbank_id + ".gbm1")
     NPROC = args.NPROC
@@ -219,24 +234,18 @@ if __name__ == "__main__":
         ORI, TER = find_ori_ter(annotation)
 
     # Get table of all gene features
+    print("Extracting gene features...")
     feature_table = get_feature_table(annotation, OUT_DIR, ORI, TER,
                                       GEPTOP_PARAMS, CODONW_FEATURES)
-    feature_table.to_csv(os.path.join(OUT_DIR, "feature_table.csv"))
+    feature_table.to_csv(OUT_FEATTABLE)
 
     # Load classifier and get essentiality scores
-    classifier = load(CLASSIFIER)
-    X_target = feature_table[FEATURES].values
-    preprocess = Pipeline([
-        ("imputation", classifier.named_steps["imputation"]),
-        ("scaling", classifier.named_steps["scaling"])
-    ])
-    X_target = preprocess.fit(X_target).transform(X_target)  # Impute + scale
-    y_probs = classifier.predict_proba(X_target)[:, 0]
-    essentiality_scores = dict(zip(feature_table.index, y_probs))
+    print("Calculating essentiality scores...")
+    essentiality_scores = get_essentiality_scores(feature_table,
+                                                  FEATURES, CLASSIFIER)
     essentiality_table = pd.DataFrame(list(essentiality_scores.items()),
                                       columns=["locus_tag", "ess_score"])
-    essentiality_table.to_csv(os.path.join(OUT_DIR, "essentiality_table.csv"),
-                              index=False)
+    essentiality_table.to_csv(OUT_ESSTABLE, index=False)
 
     # Create modified-I GenBank file
     for gene in annotation.features:
@@ -253,3 +262,7 @@ if __name__ == "__main__":
         elif gene.type == "CDS":  # pseudo-gene
             gene.qualifiers["essentiality"] = 0
     SeqIO.write(annotation, GENBANK_M1, "genbank")
+    print(
+        "Done. Results in %s, %s and %s."
+        % (OUT_FEATTABLE, OUT_ESSTABLE, GENBANK_M1)
+    )
