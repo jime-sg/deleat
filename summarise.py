@@ -18,47 +18,7 @@ from define_deletions import complementary_compoundloc, is_essential
 from revise_deletions import is_deletion
 
 
-def best_deletion_order(gb_m3, ori, ter, log):
-    """
-    # TODO
-    Args:
-        gb_m3:
-        ori:
-        ter:
-        log:
-
-    Returns:
-
-    """
-    # Replichore imbalance = len(genome)/2 - len(0-180º replichore)
-    if ter > ori:
-        len_1 = ter - ori
-    else:
-        len_1 = len(gb_m3) - (ori - ter)
-    imbalance = len(gb_m3)/2 - len_1
-    # Calculate each deletion's contribution to the imbalance
-    deletions = []
-    for feature in gb_m3.features:
-        if is_deletion(feature):
-            name = feature.qualifiers["note"][0].split()[-1]
-            midpoint = (feature.location.end + feature.location.start) / 2
-            if midpoint > ori or midpoint < ter:  # 0-180º replichore
-                contrib = len(feature)
-            else:  # 180-360º replichore
-                contrib = -len(feature)
-            deletions.append((name, contrib))
-    # Best next deletion is the one that minimises the imbalance
-    with open(log, "w") as f:
-        f.write("Initial replichore imbalance: %d\n" % imbalance)
-        f.write("Best deletion order for keeping the minimum possible "
-                "imbalance at each step:\n")
-        while deletions:
-            best = deletions.pop(
-                np.argmin([abs(imbalance + deletion[1])
-                           for deletion in deletions])
-            )
-            imbalance += best[1]
-            f.write("  %s -> imbalance = %d\n" % (best[0], imbalance))
+sep = "-" * 80 + "\n"
 
 
 def save_genbank_m4(gb_m3, gb_m4):
@@ -169,7 +129,6 @@ def get_stats(gb_m3):
 
 
 def write_stats(stats, log):
-    sep = "-" * 80 + "\n"
     with open(log, "w") as f:
         f.write(sep)
         f.write(
@@ -208,6 +167,51 @@ def write_stats(stats, log):
         f.write(sep)
 
 
+def best_deletion_order(gb_m3, ori, ter, log):
+    """
+    # TODO
+    Args:
+        gb_m3:
+        ori:
+        ter:
+        log:
+
+    Returns:
+
+    """
+    # Replichore imbalance = len(genome)/2 - len(0-180º replichore)
+    if ter > ori:
+        len_1 = ter - ori
+    else:
+        len_1 = len(gb_m3) - (ori - ter)
+    imbalance = len(gb_m3)/2 - len_1
+    # Calculate each deletion's contribution to the imbalance
+    deletions = []
+    for feature in gb_m3.features:
+        if is_deletion(feature):
+            name = feature.qualifiers["note"][0].split()[-1]
+            midpoint = (feature.location.end + feature.location.start) / 2
+            if midpoint > ori or midpoint < ter:  # 0-180º replichore
+                contrib = len(feature)
+            else:  # 180-360º replichore
+                contrib = -len(feature)
+            deletions.append((name, contrib))
+    # Best next deletion is the one that minimises the imbalance
+    with open(log, "a") as f:
+        f.write("Initial replichore imbalance: %d\n" % imbalance)
+        f.write("Best deletion order for minimising imbalance at each step:\n")
+        n = 0
+        while deletions:
+            n += 1
+            best = deletions.pop(
+                np.argmin([abs(imbalance + deletion[1])
+                           for deletion in deletions])
+            )
+            imbalance += best[1]
+            f.write("  %d. %s -> imbalance = %d\n" % (n, best[0], imbalance))
+        f.write(sep)
+
+
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
@@ -221,10 +225,10 @@ if __name__ == "__main__":
         "-o", dest="OUT_DIR", required=True,
         help="directory for output files")
     parser.add_argument(
-        "-p1", dest="ORI",
+        "-p1", dest="ORI", type=int,
         help="position of origin of replication")
     parser.add_argument(
-        "-p2", dest="TER",
+        "-p2", dest="TER", type=int,
         help="position of terminus of replication")
     args, unknown = parser.parse_known_args()
     GENBANK_M3 = args.GBM3
@@ -232,7 +236,6 @@ if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
     genbank_id = os.path.splitext(os.path.basename(GENBANK_M3))[0]
     GENBANK_M4 = os.path.join(OUT_DIR, genbank_id + ".gbm4")
-    ORDER_LOG = os.path.join(OUT_DIR, "deletion_order.txt")
     OUT_IMG = os.path.join(OUT_DIR, "genome_reduction")
     REPORT_LOG = os.path.join(OUT_DIR, "reduction_stats.txt")
     ORI = args.ORI
@@ -242,12 +245,8 @@ if __name__ == "__main__":
     # TODO
     genbank_m3 = SeqIO.read(GENBANK_M3, "genbank")
 
-    # Determine best deletion order
-    if not (ORI and TER):
-        ORI, TER = find_ori_ter(genbank_m3)
-    best_deletion_order(genbank_m3, ORI, TER, ORDER_LOG)
-
     # Draw circular genome plot
+    print("Drawing circular genome plot...")
     save_genbank_m4(genbank_m3, GENBANK_M4)
     circplot.plot(
         gb_outer=GENBANK_M3,
@@ -258,5 +257,10 @@ if __name__ == "__main__":
     os.remove(GENBANK_M4)
 
     # Final report
+    print("Generating final reduction report...")
     reduction_stats = get_stats(genbank_m3)
     write_stats(reduction_stats, REPORT_LOG)
+    if not (ORI and TER):
+        ORI, TER = find_ori_ter(genbank_m3)
+    best_deletion_order(genbank_m3, ORI, TER, REPORT_LOG)
+    print("Done. Results in %s and %s." % (OUT_IMG + ".png", REPORT_LOG))
