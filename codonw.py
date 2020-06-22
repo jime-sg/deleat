@@ -26,7 +26,7 @@ def run(fasta, feature_list, remove_blk=True):
         results (pd.DataFrame): table of results with each gene in a row
             and each calculated feature in a column.
     """
-    print("Running CodonW...")
+    print("  Running CodonW...")
     out_dir = os.path.split(fasta)[0]
     out = os.path.join(out_dir, "codonw.out")
     blk = os.path.join(out_dir, "codonw.blk")
@@ -41,7 +41,6 @@ def run(fasta, feature_list, remove_blk=True):
     results = read_table(out)
     if remove_blk:
         os.remove(blk)
-    print("Done.")
     return results
 
 

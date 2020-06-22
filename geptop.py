@@ -93,7 +93,6 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     blast_path = os.path.join(out_path, "blast_results")
     os.makedirs(blast_path, exist_ok=True)
 
-    print("Reading reference proteome...")
     genes = SeqIO.parse(query_file, "fasta")
     scores = dict.fromkeys((gene.description for gene in genes), 0)
     make_blastdb(query_file)
@@ -101,17 +100,16 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     # Calculate query CV
     query_cv = composition_vector(query_file)
 
-    print("Reading DEG database...")
     deg_organisms = [(os.path.splitext(os.path.basename(file))[0],
                       os.path.join(deg_path, file))
                      for file in os.listdir(deg_path)]
     deg_organisms.sort(key=lambda x: x[0])
 
-    print("Finding essential orthologs in:")
+    print("  Finding essential orthologs in:")
     for deg_id, deg_file in deg_organisms:
         t0 = time()
         print(
-            "  %s %s" % (deg_id, ORG_NAMES[deg_id]),
+            "    %s %s" % (deg_id, ORG_NAMES[deg_id]),
             end=" ", flush=True
         )
 
@@ -140,7 +138,6 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
 
     os.rmdir(blast_path)
     remove_blastdb(query_file)
-    print("Done. Normalising essentiality scores...")
     scores = normalise(scores)
 
     # Classify genes

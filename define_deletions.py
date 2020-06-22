@@ -237,4 +237,4 @@ if __name__ == "__main__":
     save_genbank_m2(proposed_deletions, annotation, GENBANK_M2, L, E)
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
-    print("Done.")
+    print("Done. Restuls in %s and %s." % (OUT_TABLE, GENBANK_M2))

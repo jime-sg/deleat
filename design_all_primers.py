@@ -59,12 +59,13 @@ if __name__ == "__main__":
                 % (name, start, end)
             )
             subprocess.call(
-                ["python", "design_primers.py",
+                ["python",
+                 os.path.join(os.path.dirname(__file__), "design_primers.py"),
                  "-g", fasta, "-o", OUT_DIR,
                  "-n", name, "-d1", str(start), "-d2", str(end),
                  "-e", ENZYME, "-L", str(HR_LENGTH)]
             )
-    print("Done.")
+    print("Done. All results in directory '%s'." % OUT_DIR)
 
     # Delete temporary FASTA file
     os.remove(fasta)

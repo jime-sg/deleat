@@ -127,9 +127,11 @@ if __name__ == "__main__":
         )
 
     # Redefine deletions
+    print("Redefining deletions...")
     revised_deletions = parse_deletions(in_table)
     names = in_table.index.to_list()
     save_genbank_m3(revised_deletions, names,  genbank_m2, GENBANK_M3)
     deletions_table = make_table(revised_deletions, genbank_m2)
     deletions_table.index = in_table.index
     deletions_table.to_csv(OUT_TABLE)
+    print("Done. Results in %s and %s." % (OUT_TABLE, GENBANK_M3))
