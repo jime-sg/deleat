@@ -43,9 +43,12 @@ def get_deletions(gb_m1, l, e):
     essential_regions = merge_overlaps(essential_regions)
     nonessential_regions = complementary_compoundloc(0, len(gb_m1),
                                                      essential_regions)
-    deletions = CompoundLocation([
-        region for region in nonessential_regions.parts if len(region) >= l
-    ])
+    try:
+        deletions = CompoundLocation([
+            region for region in nonessential_regions.parts if len(region) >= l
+        ])
+    except ValueError:
+        raise SystemExit("No deletions defined! Try readjusting L and/or E.")
     return deletions
 
 
