@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""tfm.py
+"""tfm.py  # FIXME
+# TODO
 @author: Jimena Solana
 """
 
@@ -11,16 +12,22 @@ STEPS = [
     "predict-essentiality",
     "define-deletions",
     "revise-deletions",
+    "summarise",
     "design-all-primers",
-    "summarise"
+    "design-primers"
 ]
 
 
 def print_usage():
-    print("usage: tfm <step name> <step arguments>")
+    print("usage: tfm <step name> <step arguments>")  # FIXME
     print("valid steps are:")
-    for i, s in enumerate(STEPS):
-        print("\t%d. %s" % (i + 1, s))
+    print(
+        "  1. predict-essentiality"
+        "\n  2. define-deletions"
+        "\n  3. revise-deletions"
+        "\n  4. summarise"
+        "\n  5. design-all-primers / design-primers"
+    )
     raise SystemExit
 
 
