@@ -67,6 +67,7 @@ if __name__ == "__main__":
         ("imputation", SimpleImputer()),  # impute missing data (Nc values)
         ("scaling", MinMaxScaler()),  # scale data to [0, 1]
         ("logistic_regression", LogisticRegression(solver="saga",
+                                                   class_weight="balanced",
                                                    random_state=123))
     ])
     search = GridSearchCV(search_pipeline, params, scoring="roc_auc", n_jobs=-1)
@@ -77,6 +78,7 @@ if __name__ == "__main__":
         ("scaling", MinMaxScaler()),
         ("logistic_regression", LogisticRegression(C=best_C,
                                                    solver="saga",
+                                                   class_weight="balanced",
                                                    random_state=123))
     ])
     pipeline.fit(X_train, y_train)
