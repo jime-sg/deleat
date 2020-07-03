@@ -257,8 +257,25 @@ if __name__ == "__main__":
     TER = args.TER
 
     # Check input
-    # TODO
-    genbank_m3 = SeqIO.read(GENBANK_M3, "genbank")
+    try:
+        genbank_m3 = SeqIO.read(GENBANK_M3, "genbank")
+    except (FileNotFoundError, ValueError):
+        raise SystemExit("\n\terror: could not read .gbm3 file\n")
+    contains_dels = False
+    for feature in genbank_m3.features:
+        if is_deletion(feature):
+            contains_dels = True
+            break
+    if not contains_dels:
+        raise SystemExit("\n\terror: invalid GenBank file (must be .gbm3)\n")
+    if ORI and TER:
+        if not all([coord in range(1, len(genbank_m3)+1)
+                    for coord in (ORI, TER)]):
+            raise SystemExit("\n\terror: invalid ori/ter coordinates\n")
+
+    # Get ori + ter coordinates
+    if not (ORI and TER):
+        ORI, TER = find_ori_ter(genbank_m3)
 
     # Draw circular genome plot
     print("Drawing circular genome plot...")
@@ -275,7 +292,5 @@ if __name__ == "__main__":
     print("Generating final reduction report...")
     reduction_stats = get_stats(genbank_m3)
     write_stats(reduction_stats, REPORT_LOG)
-    if not (ORI and TER):
-        ORI, TER = find_ori_ter(genbank_m3)
     best_deletion_order(genbank_m3, ORI, TER, REPORT_LOG)
     print("Done. Results in %s and %s." % (OUT_IMG + ".png", REPORT_LOG))
