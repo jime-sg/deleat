@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tfm.py  # FIXME
+"""deleat.py
 # TODO
 @author: Jimena Solana
 """
@@ -19,7 +19,7 @@ STEPS = [
 
 
 def print_usage():
-    print("usage: tfm <step name> <step arguments>")  # FIXME
+    print("usage: deleat <step name> <step arguments>")
     print("valid steps are:")
     print(
         "  1. predict-essentiality"
