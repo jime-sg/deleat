@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """summarise.py
-# TODO
+
+    Generate final reports about deletion design and genome reduction
+    process.
+
 @author: Jimena Solana
 """
 
@@ -22,14 +25,11 @@ sep = "-" * 80 + "\n"
 
 
 def save_genbank_m4(gb_m3, gb_m4):
-    """
-    # TODO
+    """Generate modified-IV GenBank file (reduced version of the genome).
+
     Args:
-        gb_m3:
-        gb_m4:
-
-    Returns:
-
+        gb_m3 (Bio.SeqRecord.SeqRecord): modified-III GenBank annotation.
+        gb_m4 (str): modified-IV GenBank file path.
     """
     deletions = []
     for feature in gb_m3.features:
@@ -45,6 +45,7 @@ def save_genbank_m4(gb_m3, gb_m4):
         dbxrefs=gb_m3.dbxrefs,
         annotations=gb_m3.annotations
     )
+    # Shift features' positions according to deletions
     end = 0
     for nondel in non_deletions.parts:
         offset = nondel.start - end
@@ -58,13 +59,12 @@ def save_genbank_m4(gb_m3, gb_m4):
 
 
 def get_stats(gb_m3):
-    """
-    # TODO
+    """Calculate essentiality prediction and deletion statistics.
+
     Args:
-        gb_m3:
-
+        gb_m3 (Bio.SeqRecord.SeqRecord): modified-III GenBank annotation.
     Returns:
-
+        stats (dict): results.
     """
     l = 0
     e = 0
@@ -129,6 +129,13 @@ def get_stats(gb_m3):
 
 
 def write_stats(stats, log):
+    """Write essentiality prediction and deletion statistics to a report
+    file.
+
+    Args:
+        stats (dict): essentiality prediction and deletion statistics.
+        log (str): report file path.
+    """
     with open(log, "w") as f:
         f.write(sep)
         f.write(
@@ -177,16 +184,14 @@ def write_stats(stats, log):
 
 
 def best_deletion_order(gb_m3, ori, ter, log):
-    """
-    # TODO
+    """Calculate optimal deletion order for minimising replichore
+    imbalance at each step.
+
     Args:
-        gb_m3:
-        ori:
-        ter:
-        log:
-
-    Returns:
-
+        gb_m3 (Bio.SeqRecord.SeqRecord): modified-III GenBank annotation.
+        ori (int): position of origin of replication.
+        ter (int): position of terminus of replication.
+        log (str): report file path.
     """
     # Replichore imbalance = len(genome)/2 - len(0-180º replichore)
     if ter > ori:
@@ -225,7 +230,8 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = ArgumentParser(
         prog="summarise",
-        description=""  # FIXME
+        description="Generate final reports about deletion design and genome "
+                    "reduction process."
     )
     parser.add_argument(
         "-g3", dest="GBM3", required=True,

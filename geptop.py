@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """geptop.py
-# TODO
+
+    Calculate essentiality scores with the Geptop 2 algorithm
+    (Wen et al., 2019).
+
 @author: Jimena Solana
 """
 

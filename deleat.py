@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """deleat.py
-# TODO
+
+    DELEAT: deletion design by essentiality analysis tool
+    Version 0.1
+
 @author: Jimena Solana
 """
 
