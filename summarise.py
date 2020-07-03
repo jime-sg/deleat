@@ -98,13 +98,13 @@ def get_stats(gb_m3):
         if is_essential(feature, e):  # essential
             if feature.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
                 stats["ess_genes_rna"] += 1
-            elif feature.type == "CDS":
+            elif feature.type == "CDS" and "locus_tag" in feature.qualifiers:
                 if ("product" in feature.qualifiers and
                         "hypothetical" in feature.qualifiers["product"][0]):
                     stats["ess_genes_hypot"] += 1
                 else:
                     stats["ess_genes_nonhypot"] += 1
-        elif feature.type == "CDS":  # non-essential
+        elif feature.type == "CDS" and "locus_tag" in feature.qualifiers:  # non-essential
             if "pseudo" in feature.qualifiers:
                 stats["ness_genes_pseudo"] += 1
             elif ("product" in feature.qualifiers and
@@ -162,7 +162,16 @@ def write_stats(stats, log):
         )
         f.write(
             "Designed deletions:\n  total %d\n  %d kb\n  %.2f %% of genome\n"
-            % (stats["del_n"], stats["del_kb"], stats["del_perc"])
+            "  %d genes\n    pseudo %d\n    hypothetical %d\n"
+            "    annotated %d\n"
+            % (stats["del_n"], stats["del_kb"], stats["del_perc"],
+               stats["del_genes_pseudo"]
+               + stats["del_genes_hypot"]
+               + stats["del_genes_nonhypot"],
+               stats["del_genes_pseudo"],
+               stats["del_genes_hypot"],
+               stats["del_genes_nonhypot"]
+               )
         )
         f.write(sep)
 
