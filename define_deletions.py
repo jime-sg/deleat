@@ -169,10 +169,10 @@ def gene_content(deletion, annot):
     """
     genes = {"pseudo": 0, "hypot": 0, "non-hypot": 0}
     for gene in annot.features:
-        if gene.location.start in deletion and gene.location.end in deletion:
+        if gene.location.start in deletion or gene.location.end in deletion:
             if gene.type in ("tRNA", "rRNA", "tmRNA", "ncRNA"):
                 genes["non-hypot"] += 1
-            elif gene.type == "CDS":
+            elif gene.type == "CDS" and "locus_tag" in gene.qualifiers:
                 if "pseudo" in gene.qualifiers:
                     genes["pseudo"] += 1
                 elif ("product" in gene.qualifiers and
@@ -240,4 +240,4 @@ if __name__ == "__main__":
     save_genbank_m2(proposed_deletions, annotation, GENBANK_M2, L, E)
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
-    print("Done. Restuls in %s and %s." % (OUT_TABLE, GENBANK_M2))
+    print("Done. Results in %s and %s." % (OUT_TABLE, GENBANK_M2))
