@@ -28,7 +28,7 @@ FEATURES = ["strand_lead", "geptop", "Nc", "GC", "L_aa", "Gravy"]
 DEG = os.path.join(os.path.dirname(__file__), "data/deg")
 CV = os.path.join(os.path.dirname(__file__), "data/cv")
 CLASSIFIER = os.path.join(os.path.dirname(__file__),
-                          "classifier/classifier_rebalanced.joblib")  # FIXME
+                          "classifier/classifier.joblib")
 
 
 def find_ori_ter(gb):
