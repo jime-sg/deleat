@@ -198,7 +198,7 @@ if __name__ == "__main__":
         )
     log.write("\nAdded tails:\n")
     for name, primer in megapriming.primers_tailed_dict.items():
-        syst_name = pr.get_name(DEL_NAME, name, 1, 1, enzyme)  # FIXME
+        syst_name = pr.get_name(DEL_NAME, name, 1, 1, enzyme)
         log.write("%s: %s\n" % (syst_name, primer))
     log.write(
         "\nWarning: leading 'nnnnnn' in PCR1_F and PCR2_R primers should be "

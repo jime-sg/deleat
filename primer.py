@@ -218,14 +218,14 @@ class PrimerSet:
                        Seq("nnnnnn"))
         return pcr_product
 
-    def save_pcr_regions(self, del_name, path):
+    def save_pcr_regions(self, del_name, out_dir):
         """Save defined PCR regions and total product to a FASTA file.
 
         Args:
             del_name (str): name of genome deletion.
-            path (str): output file path.
+            out_dir (str): output file directory.
         """
-        with open(os.path.join(path, del_name + "_PCR_regions.fna"), "w") as f:
+        with open(os.path.join(out_dir, del_name + "_PCR_regions.fna"), "w") as f:
             pcr1 = self.PCR1_region
             pcr2 = self.PCR2_region
             prod = self.get_product()

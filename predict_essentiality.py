@@ -167,6 +167,16 @@ def strand(proteome, ori, ter):
 
 
 def get_essentiality_scores(feat_table, features, classifier):
+    """
+    # TODO
+    Args:
+        feat_table:
+        features:
+        classifier:
+
+    Returns:
+
+    """
     classifier = load(classifier)
     X_target = feat_table[features].values
     preprocess = Pipeline([
@@ -213,10 +223,10 @@ if __name__ == "__main__":
     ORI = args.ORI
     TER = args.TER
     GEPTOP_PARAMS = {
-        "deg_path": DEG,
-        "cv_path": CV,
+        "deg_dir": DEG,
+        "cv_dir": CV,
         "n_proc": NPROC,
-        "out_path": OUT_DIR
+        "out_dir": OUT_DIR
     }
 
     # Check input

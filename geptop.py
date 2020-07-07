@@ -75,7 +75,7 @@ ORG_NAMES = {
 }
 
 
-def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
+def run(query_file, deg_dir, cv_dir, n_proc, out_dir, cutoff=0.24):
     """
     Get essentiality scores and classification for each protein in a
     file, according to the Geptop algorithm (prediction based on
@@ -83,18 +83,18 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     Essential Genes as reference.
     Args:
         query_file (str): query proteins in FASTA format.
-        deg_path (str): directory containing DEG reference proteomes.
-        cv_path (str): directory containing pre-computed composition
+        deg_dir (str): directory containing DEG reference proteomes.
+        cv_dir (str): directory containing pre-computed composition
             vectors for DEG reference proteomes.
         cutoff (float): cutoff score for essentiality classification.
         n_proc (int): number of CPUs to use for execution.
-        out_path (str): output directory.
+        out_dir (str): output directory.
     Returns:
         results (dict of str: (float, bool)): essentiality score and
             classification (True/False) for each protein.
     """
-    blast_path = os.path.join(out_path, "blast_results")
-    os.makedirs(blast_path, exist_ok=True)
+    blast_dir = os.path.join(out_dir, "blast_results")
+    os.makedirs(blast_dir, exist_ok=True)
 
     genes = SeqIO.parse(query_file, "fasta")
     scores = dict.fromkeys((gene.description for gene in genes), 0)
@@ -104,8 +104,8 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
     query_cv = composition_vector(query_file)
 
     deg_organisms = [(os.path.splitext(os.path.basename(file))[0],
-                      os.path.join(deg_path, file))
-                     for file in os.listdir(deg_path)]
+                      os.path.join(deg_dir, file))
+                     for file in os.listdir(deg_dir)]
     deg_organisms.sort(key=lambda x: x[0])
 
     print("  Finding essential orthologs in:")
@@ -118,17 +118,17 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
 
         # Find ortholog pairs
         make_blastdb(deg_file)
-        blast_all(query_file, deg_file, blast_path, n_proc)
+        blast_all(query_file, deg_file, blast_dir, n_proc)
         orthologs = rbh(
-            os.path.join(blast_path, deg_id + "_f.xml"),
-            os.path.join(blast_path, deg_id + "_r.xml")
+            os.path.join(blast_dir, deg_id + "_f.xml"),
+            os.path.join(blast_dir, deg_id + "_r.xml")
         )
-        os.remove(os.path.join(blast_path, deg_id + "_f.xml"))
-        os.remove(os.path.join(blast_path, deg_id + "_r.xml"))
+        os.remove(os.path.join(blast_dir, deg_id + "_f.xml"))
+        os.remove(os.path.join(blast_dir, deg_id + "_r.xml"))
         remove_blastdb(deg_file)
 
         # Calculate species distance
-        dist = get_distance(query_cv, deg_id, cv_path)
+        dist = get_distance(query_cv, deg_id, cv_dir)
         if dist == 0:
             dist = 0.01
 
@@ -139,7 +139,7 @@ def run(query_file, deg_path, cv_path, n_proc, out_path, cutoff=0.24):
         t1 = time()
         print("(%.2f s)" % (t1 - t0))
 
-    os.rmdir(blast_path)
+    os.rmdir(blast_dir)
     remove_blastdb(query_file)
     scores = normalise(scores)
 
@@ -229,6 +229,7 @@ def num2word(num):
 
 def make_blastdb(seqs_file):
     """Make a BLAST database from a protein FASTA file.
+
     Args:
         seqs_file (str): protein sequence FASTA file path.
     """
@@ -241,6 +242,7 @@ def make_blastdb(seqs_file):
 
 def remove_blastdb(in_file):
     """Remove BLAST database files.
+
     Args:
         in_file (str): input file for construction of the database.
     """
@@ -248,13 +250,14 @@ def remove_blastdb(in_file):
         os.remove(db_file)
 
 
-def blast_all(query, subject, xml_path, n_proc):
+def blast_all(query, subject, xml_dir, n_proc):
     """Perform a reciprocal all-vs-all BLAST search between two
     proteomes.
+
     Args:
         query (str): filename of first proteome in FASTA format.
         subject (str): filename of second proteome in FASTA format.
-        xml_path (str): directory for BLAST output in XML format.
+        xml_dir (str): directory for BLAST output in XML format.
         n_proc (int): number of threads for BLAST search.
     """
     subj_id = os.path.splitext(os.path.basename(subject))[0]
@@ -262,14 +265,14 @@ def blast_all(query, subject, xml_path, n_proc):
     forward = NcbiblastpCommandline(
         query=query, db=subject,
         evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_path, "%s_f.xml" % subj_id)
+        out=os.path.join(xml_dir, "%s_f.xml" % subj_id)
     )
     out, err = forward()
 
     reverse = NcbiblastpCommandline(
         query=subject, db=query,
         evalue=BLAST_EVALUE, outfmt=5, num_threads=n_proc,
-        out=os.path.join(xml_path, "%s_r.xml" % subj_id)
+        out=os.path.join(xml_dir, "%s_r.xml" % subj_id)
     )
     out, err = reverse()
 
@@ -277,6 +280,7 @@ def blast_all(query, subject, xml_path, n_proc):
 def rbh(f_xml, r_xml):
     """Parse the output from a reciprocal all-vs-all BLAST search into a
     list of ortholog pairs.
+
     Args:
         f_xml (str): results of forward BLAST search in XML format.
         r_xml (str): results of reverse BLAST search in XML format.
@@ -307,19 +311,20 @@ def rbh(f_xml, r_xml):
     return orthologs
 
 
-def get_distance(query_cv, ref_org, cv_path):
+def get_distance(query_cv, ref_org, cv_dir):
     """Calculate phylogenetic distance between two proteomes by the CV
     method.
+
     Args:
         query_cv (dict of int:float): composition vector of query
             proteome.
         ref_org (str): DEG id of subject proteome.
-        cv_path (str): directory containing pre-computed composition
+        cv_dir (str): directory containing pre-computed composition
             vectors for DEG reference proteomes.
     Returns:
         dist (float): phylogenetic distance.
     """
-    with open(os.path.join(cv_path, ref_org + ".json")) as f:
+    with open(os.path.join(cv_dir, ref_org + ".json")) as f:
         ref_cv = {int(a): b for a, b in json.load(f).items()}
 
     dist = distance(query_cv, ref_cv)
@@ -328,6 +333,7 @@ def get_distance(query_cv, ref_org, cv_path):
 
 def distance(cv1, cv2):
     """Calculate distance between two composition vectors.
+
     Args:
         cv1 (dict of int:float): first composition vector.
         cv2 (dict of int:float): second composition vector.
@@ -360,6 +366,7 @@ def is_essential(hit_id):
 
 def normalise(raw):
     """Normalise essentiality scores.
+
     Args:
         raw (dict of str: float): raw essentiality scores.
     Returns:

@@ -45,10 +45,10 @@ if __name__ == "__main__":
         os.remove(os.path.join(deg2, DEG_ID + ".faa"))
 
     geptop_params = {
-        "deg_path": deg2,
-        "cv_path": CV,
+        "deg_dir": deg2,
+        "cv_dir": CV,
         "n_proc": NPROC,
-        "out_path": OUT_DIR
+        "out_dir": OUT_DIR
     }
 
     results = get_feature_table(annot, OUT_DIR, ori, ter,
