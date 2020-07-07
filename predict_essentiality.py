@@ -167,15 +167,20 @@ def strand(proteome, ori, ter):
 
 
 def get_essentiality_scores(feat_table, features, classifier):
-    """
-    # TODO
+    """Predict essentiality scores with a pre-trained classifier.
+
+    Load classifier, preprocess data (imputation + scaling), perform
+    prediction and return the resulting scores. Scores represent each
+    gene's probability of belonging to the class "essential".
     Args:
-        feat_table:
-        features:
-        classifier:
-
+        feat_table (pd.DataFrame): table of results of all calculated
+            gene features.
+        features (list of str): gene features for essentiality
+            prediction.
+        classifier (str): essentiality classifier file path.
     Returns:
-
+        ess_scores (dict of str:float): essentiality scores (locus_tag:
+            score).
     """
     classifier = load(classifier)
     X_target = feat_table[features].values
