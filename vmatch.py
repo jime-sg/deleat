@@ -8,10 +8,10 @@
 """
 
 import subprocess
-from os import path, makedirs
+import os
 
 
-def run(genome_file, repeat_length, out_path):
+def run(genome_file, repeat_length, out_dir):
     """Compute list of all exact repeats of length >= repeat_length in a
     genome, using Vmatch.
 
@@ -21,7 +21,7 @@ def run(genome_file, repeat_length, out_path):
     Args:
         genome_file (str): genome sequence file in FASTA format.
         repeat_length (int): min size of repeats to be found.
-        out_path (str): output file path.
+        out_dir (str): directory for output files.
     Returns:
         repeats_list (set of tuple(int, int)): found repeat locations.
     """
@@ -30,23 +30,25 @@ def run(genome_file, repeat_length, out_path):
         "index.sti1", "index.tis", "index.bck", "index.des", "index.llv",
         "index.prj", "index.skp", "index.suf"
     )
-    if not all([path.isfile("%s/vmatch/%s" % (out_path, f))
+    if not all([os.path.isfile(os.path.join(out_dir, "vmatch", f))
                 for f in index_files]):
-        makedirs("%s/vmatch" % out_path, exist_ok=True)
+        os.makedirs(os.path.join(out_dir, "vmatch"), exist_ok=True)
         # Vmatch: index genome
         subprocess.call(
             ["mkvtree", "-db", genome_file, "-dna",
-             "-indexname", "%s/vmatch/index" % out_path, "-pl", "-allout"]
+             "-indexname", os.path.join(out_dir, "vmatch/index"),
+             "-pl", "-allout"]
         )
     # Vmatch: find repeats
-    with open("%s/vmatch/repeats.txt" % out_path, "w") as f:
+    repeats_file = os.path.join(out_dir, "vmatch/repeats.txt")
+    with open(repeats_file, "w") as f:
         subprocess.call(
             ["vmatch", "-l", str(repeat_length), "-d", "-p",
              "-noidentity", "-nodist", "-noevalue", "-noscore",
-             "%s/vmatch/index" % out_path],
+             os.path.join(out_dir, "vmatch/index")],
             stdout=f
         )
-    repeats_list = parse_results("%s/vmatch/repeats.txt" % out_path)
+    repeats_list = parse_results(repeats_file)
     return repeats_list
 
 
