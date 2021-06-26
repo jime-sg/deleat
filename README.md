@@ -40,9 +40,11 @@ Results are saved to a *modified-I GenBank file* (`.gbm1`), which includes essen
 
 Compute table of proposed deletions.
 
-Usage: `deleat define-deletions -g1 <modified-I GenBank file> -o <output dir> -l <min deletion length> -e <essentiality score threshold>`
+Usage: `deleat define-deletions -g1 <modified-I GenBank file> -o <output dir> -l <min deletion length> -e <essentiality score threshold> [-m <non-coding margin>]`
 
 An essentiality threshold of about 0.75 is recommended, but feel free to adjust it for your specific case.
+
+The default non-coding margin around essential genes which is to be retained is 200 bp, but you can change this setting if you know of shorter/longer cis-regulatory elements in your genome.
 
 Results are saved to a *modified-II GenBank file* (`.gbm2`), which includes essentiality scores and proposed deletions, and a deletion table in CSV format.
 

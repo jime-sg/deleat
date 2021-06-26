@@ -15,10 +15,7 @@ from Bio.SeqFeature import FeatureLocation, CompoundLocation, SeqFeature
 import pandas as pd
 
 
-NONCODING_MARGIN = 200
-
-
-def get_deletions(gb_m1, l, e):
+def get_deletions(gb_m1, l, e, nc_margin):
     """Define a list of deletions according to parameters L and E.
 
     A deletion is defined as any region longer than (or equal to) L not
@@ -27,6 +24,7 @@ def get_deletions(gb_m1, l, e):
         gb_m1 (Bio.SeqRecord.SeqRecord): GenBank annotation.
         l (int): minimum deletion length.
         e (float): gene essentiality threshold.
+        nc_margin (int): non-coding margin around essential genes.
     Returns:
         deletions (Bio.SeqFeature.CompoundLocation): list of proposed
             deletions.
@@ -36,8 +34,8 @@ def get_deletions(gb_m1, l, e):
     print("Essential gene count with threshold %.3f: %d"
           % (e, len(essential_genes)))
     essential_regions = CompoundLocation([
-        FeatureLocation(gene.location.start - NONCODING_MARGIN,
-                        gene.location.end + NONCODING_MARGIN)
+        FeatureLocation(max(gene.location.start - nc_margin, 0),
+                        min(gene.location.end + nc_margin, len(gb_m1)))
         for gene in essential_genes
     ])
     essential_regions = merge_overlaps(essential_regions)
@@ -126,7 +124,7 @@ def save_genbank_m2(deletions, gb_m1, gb_m2, l, e):
         )
         deletion_feature.qualifiers["note"] = ["deletion D%s" % (n+1),
                                                "L=%d" % l,
-                                               "E=%.3f" %e]
+                                               "E=%.3f" % e]
         gb_m1.features.append(deletion_feature)
     SeqIO.write(gb_m1, gb_m2, "genbank")
 
@@ -192,7 +190,9 @@ if __name__ == "__main__":
             "Compute table of proposed deletions. "
             "A deletion is defined as any region longer than (or equal to) "
             "DEL_LENGTH not containing any gene with essentiality score "
-            "higher than ESS_THRESHOLD."
+            "higher than ESS_THRESHOLD. A default non-coding margin NC_MARGIN "
+            "of 200 bp is defined around essential genes which must be "
+            "retained (may contain cis-regulatory elements)."
         )
     )
     parser.add_argument(
@@ -207,6 +207,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", dest="ESS_THRESHOLD", required=True, type=float,
         help="gene essentiality threshold")
+    parser.add_argument(
+        "-m", dest="NC_MARGIN", type=int, default=200, choices=range(0, 10000),
+        help="non-coding margin around essential genes")
     args, unknown = parser.parse_known_args()
     GENBANK_M1 = args.GBM1
     OUT_DIR = args.OUT_DIR
@@ -216,6 +219,7 @@ if __name__ == "__main__":
     OUT_TABLE = os.path.join(OUT_DIR, "proposed_deletions.csv")
     L = args.DEL_LENGTH
     E = args.ESS_THRESHOLD
+    noncoding_margin = args.NC_MARGIN
 
     # Check input
     try:
@@ -236,7 +240,7 @@ if __name__ == "__main__":
 
     # Define deletions
     print("Computing deletion list...")
-    proposed_deletions = get_deletions(annotation, L, E)
+    proposed_deletions = get_deletions(annotation, L, E, noncoding_margin)
     save_genbank_m2(proposed_deletions, annotation, GENBANK_M2, L, E)
     deletions_table = make_table(proposed_deletions, annotation)
     deletions_table.to_csv(OUT_TABLE)
