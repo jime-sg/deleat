@@ -13,7 +13,7 @@ Once deletions are designed, DELEAT provides the user with useful information in
 2. Create a Conda env from deleat_env.txt file: `conda create --name deleat-v0.1 --file deleat_env.txt`. This will install all dependencies.
 3. Add DELEAT to your PATH: edit ~/.bashrc file to include `alias deleat="python /your/path/to/deleat/deleat-v0.1/deleat.py"` (change `/your/path/to/` to the appropiate path).
 
-## With Docker + Conda:
+### With Docker + Conda:
 
 1. Clone the repository: `git clone https://github.com/jime-sg/deleat.git deleat && cd deleat`.
 2. Build the Docker image: `docker build -t deleat .`
