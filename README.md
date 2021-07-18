@@ -17,7 +17,7 @@ Once deletions are designed, DELEAT provides the user with useful information in
 
 1. Clone the repository: `git clone https://github.com/jime-sg/deleat.git deleat && cd deleat`.
 2. Build the Docker image: `docker build -t deleat .`
-3. Run the container with an interactive shell, mounting your GenBank annotation file for analysis: `docker run -it -v <genbank_file_path>:/home/genbank deleat`
+3. Run the container with an interactive shell, mounting your GenBank annotation file for analysis: `docker run -it -v <genbank_file_path>:/home/genbank/<genbank_filename> deleat`
 
 ## Usage
 First, activate the Conda env: `conda activate deleat-v0.1`
