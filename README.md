@@ -7,9 +7,17 @@ Once deletions are designed, DELEAT provides the user with useful information in
 
 ## Installation
 
+### With Conda:
+
 1. Clone the repository: `git clone https://github.com/jime-sg/deleat.git deleat && cd deleat`.
 2. Create a Conda env from deleat_env.txt file: `conda create --name deleat-v0.1 --file deleat_env.txt`. This will install all dependencies.
 3. Add DELEAT to your PATH: edit ~/.bashrc file to include `alias deleat="python /your/path/to/deleat/deleat-v0.1/deleat.py"` (change `/your/path/to/` to the appropiate path).
+
+## With Docker + Conda:
+
+1. Clone the repository: `git clone https://github.com/jime-sg/deleat.git deleat && cd deleat`.
+2. Build the Docker image: `docker build -t deleat .`
+3. Run the container with an interactive shell, mounting your GenBank annotation file for analysis: `docker run -it -v <genbank_file_path>:/home/genbank deleat`
 
 ## Usage
 First, activate the Conda env: `conda activate deleat-v0.1`
