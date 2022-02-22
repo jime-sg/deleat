@@ -1,7 +1,10 @@
 # DELEAT v0.1 (deletion design by essentiality analysis tool)
 DELEAT is a bioinformatic analysis pipeline for the design of large-scale genome deletions in bacterial genomes.
 
-It uses a machine learning logistic regression classifier trained on a selection of organisms from the Database of Essential Genes (DEG) to assign an essentiality score for each gene in the genome, and then uses this information to determine non-essential regions.
+An article describing implementation details and a usage example [has been published in BMC Bioinformatics](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-021-04348-5). Please cite as:
+Solana, J., Garrote-Sánchez, E. & Gil, R. DELEAT: gene essentiality prediction and deletion design for bacterial genome reduction. BMC Bioinformatics 22, 444 (2021). https://doi.org/10.1186/s12859-021-04348-5
+
+DELEAT uses a machine learning logistic regression classifier trained on a selection of organisms from the Database of Essential Genes (DEG) to assign an essentiality score for each gene in the genome, and then uses this information to determine non-essential regions.
 
 Once deletions are designed, DELEAT provides the user with useful information in the shape of reports and a circular genome plot to visualise the potential genome reduction.
 
